@@ -1,0 +1,41 @@
+{% extends "filemanager/base.html" %}
+{% block title %}Edit {{ file_name }} | StorageOS{% endblock %}
+{% block top_title %}Workspace / Edit File{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <h1>Edit File</h1>
+        <p class="muted">Modify the file content and save it to local storage.</p>
+    </div>
+    <a class="button" href="{% url 'filemanager:home' %}?path={{ file_path|urlencode }}">← Back to Folder</a>
+</div>
+
+<div class="panel">
+    <div class="panel-heading">
+        <div>
+            <h2>{{ file_name }}</h2>
+            <p class="muted small">{{ file_path }}</p>
+        </div>
+        <span class="badge">TEXT EDITOR</span>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <textarea class="editor" name="content" spellcheck="false"
+                  autocapitalize="off" autocomplete="off"
+                  aria-label="File content">{{ content }}</textarea>
+
+        <div class="editor-actions">
+            <span class="muted small">Maximum file size: 2 MB. Save carefully.</span>
+            <div class="toolbar">
+                <a class="button" href="{% url 'filemanager:home' %}?path={{ file_path|urlencode }}">Cancel</a>
+                <button class="button primary" type="submit"
+                        onclick="return confirm('Save changes to this file?')">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

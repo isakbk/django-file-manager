@@ -1,0 +1,26 @@
+# Python virtual environments (do not upload)
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Django database and collected static files
+db.sqlite3
+staticfiles/
+
+# Secrets
+.env
+.env.*
+
+# Your managed files
+managed_storage/*
+!managed_storage/.gitkeep
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

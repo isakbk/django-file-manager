@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Storage Admin{% endblock %}</title>
+    <style>
+        :root {
+            --bg: #f3f6fb;
+            --panel: #fff;
+            --ink: #182338;
+            --muted: #77839a;
+            --line: #e6ebf2;
+            --primary: #4f66e8;
+            --sidebar: #111b30;
+            --green: #15966b;
+            --red: #d94d60;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font: 14px/1.5 "Segoe UI", Arial, sans-serif;
+        }
+
+        button, input, textarea { font: inherit; }
+        button, a { -webkit-tap-highlight-color: transparent; }
+        a { color: inherit; text-decoration: none; }
+
+        .layout { min-height: 100vh; display: flex; }
+
+        .sidebar {
+            width: 240px;
+            flex-shrink: 0;
+            padding: 27px 17px;
+            background: var(--sidebar);
+            color: #c3cce0;
+        }
+
+        .brand {
+            color: white;
+            font-size: 20px;
+            font-weight: 800;
+            padding: 0 12px 30px;
+        }
+
+        .brand span { color: #8ea1ff; }
+        .nav-label {
+            margin: 15px 12px 8px;
+            color: #8390aa;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .nav-link {
+            display: block;
+            padding: 12px;
+            margin: 4px 0;
+            border-radius: 9px;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: #253452;
+            color: white;
+        }
+
+        .sidebar-note {
+            margin: 35px 6px 0;
+            padding: 14px;
+            border: 1px solid #33415b;
+            border-radius: 12px;
+            font-size: 12px;
+            color: #aab7cd;
+        }
+
+        .main { flex: 1; min-width: 0; }
+
+        .topbar {
+            height: 76px;
+            padding: 0 32px;
+            background: white;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .topbar strong { font-size: 15px; }
+        .online { color: var(--green); font-size: 12px; font-weight: 700; }
+
+        .content {
+            width: 100%;
+            max-width: 1500px;
+            padding: 30px 32px;
+            margin: auto;
+        }
+
+        .page-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 23px;
+        }
+
+        h1 { margin: 0; font-size: 26px; letter-spacing: -.6px; }
+        h2 { margin: 0; font-size: 17px; }
+        .muted { color: var(--muted); }
+        .small { font-size: 12px; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 17px;
+            margin-bottom: 22px;
+        }
+
+        .stat, .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            box-shadow: 0 3px 12px #253b5a05;
+        }
+
+        .stat { padding: 20px; }
+        .stat-label { color: var(--muted); font-size: 12px; }
+        .stat-number { font-size: 28px; font-weight: 800; margin-top: 4px; }
+
+        .panel { padding: 22px; margin-bottom: 22px; min-width: 0; }
+        .panel-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .toolbar, .inline-form {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 14px;
+            border: 1px solid var(--line);
+            background: white;
+            color: var(--ink);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 650;
+        }
+
+        .button:hover { border-color: #aab7d2; }
+        .button.primary { background: var(--primary); border-color: var(--primary); color: white; }
+        .button.danger { color: var(--red); }
+        .button.small-btn { padding: 6px 9px; font-size: 12px; }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #dfe5ef;
+            border-radius: 8px;
+            background: white;
+            color: var(--ink);
+            outline: none;
+        }
+
+        input:focus, textarea:focus { border-color: var(--primary); }
+        .inline-form input { width: auto; min-width: 130px; }
+
+        .breadcrumbs {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 9px;
+            margin: 0 0 19px;
+            color: var(--muted);
+            overflow-wrap: anywhere;
+        }
+
+        .breadcrumbs a { color: var(--primary); font-weight: 600; }
+        .breadcrumbs .separator { color: #bbc3d0; }
+
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th {
+            color: var(--muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            background: #f8faff;
+        }
+
+        th, td { padding: 14px 12px; border-bottom: 1px solid #edf0f5; }
+        tbody tr:hover { background: #fafbff; }
+        tbody tr:last-child td { border-bottom: 0; }
+
+        .file-name {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 650;
+            overflow-wrap: anywhere;
+        }
+
+        .file-icon {
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            flex-shrink: 0;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9px;
+            background: #eef1ff;
+            color: #5265d8;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .folder-icon { background: #fff2d8; color: #bd8421; }
+        .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #edf1ff;
+            color: #4c60cc;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .message {
+            margin-bottom: 12px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            background: #e9f8f0;
+            color: #187a50;
+        }
+
+        .message.error { background: #fff0f1; color: #b12d42; }
+
+        .empty {
+            text-align: center;
+            padding: 45px 15px;
+            color: var(--muted);
+        }
+
+        .editor {
+            min-height: 65vh;
+            font: 14px/1.7 Consolas, "Courier New", monospace;
+            resize: vertical;
+            tab-size: 4;
+            white-space: pre;
+        }
+
+        .editor-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 17px;
+        }
+
+        .activity-row {
+            padding: 15px 0;
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .activity-row:last-child { border-bottom: 0; }
+
+        @media (max-width: 900px) {
+            .sidebar { width: 190px; }
+            .content { padding: 22px 17px; }
+            .topbar { padding: 0 18px; }
+        }
+
+        @media (max-width: 650px) {
+            .layout { display: block; }
+            .sidebar { width: 100%; padding: 15px; }
+            .brand { padding: 0 5px 12px; }
+            .nav-label, .sidebar-note { display: none; }
+            .nav-link { display: inline-block; padding: 8px 10px; }
+            .topbar { height: 58px; }
+            .content { padding: 18px 12px; }
+            h1 { font-size: 22px; }
+            .stats { grid-template-columns: 1fr; gap: 10px; }
+            .stat { padding: 15px; }
+            .stat-number { font-size: 23px; }
+            .panel { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="brand">Storage<span>OS</span></div>
+
+        <div class="nav-label">Workspace</div>
+        <a class="nav-link" href="{% url 'filemanager:home' %}">▦ &nbsp; File Explorer</a>
+        <a class="nav-link" href="{% url 'filemanager:activity' %}">◷ &nbsp; Activity History</a>
+        <a class="nav-link" href="{% url 'filemanager:home' %}">▦ &nbsp; File Explorer</a>
+        <a class="nav-link" href="{% url 'filemanager:tree' %}">
+            🌳 &nbsp; Directory Tree
+        </a>
+        <div class="nav-label">System</div>
+        <a class="nav-link" href="{% url 'admin:index' %}">⚙ &nbsp; Django Admin</a>
+
+        <div class="sidebar-note">
+            <strong>LOCAL STORAGE</strong>
+            <p>Files are stored on your computer inside the managed storage directory.</p>
+            <span>● Private local workspace</span>
+        </div>
+    </aside>
+
+    <main class="main">
+        <header class="topbar">
+            <strong>{% block top_title %}File Management System{% endblock %}</strong>
+            <span class="online">● LOCAL SYSTEM</span>
+        </header>
+
+        <div class="content">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="message {% if message.tags == 'error' %}error{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+</div>
+</body>
+</html>

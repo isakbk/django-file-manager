@@ -1,0 +1,284 @@
+{% extends "filemanager/base.html" %}
+
+{% block title %}File Explorer | StorageOS{% endblock %}
+
+{% block top_title %}Workspace / File Explorer{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <h1>File Explorer</h1>
+    <p class="muted">Manage your files, folders and project documents.</p>
+  </div>
+  <a class="button" href="{% url 'filemanager:activity' %}">◷ View History</a>
+</div>
+
+<div class="stats">
+  <div class="stat">
+    <div class="stat-label">Files in this directory</div>
+    <div class="stat-number">{{ total_files }}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Folders in this directory</div>
+    <div class="stat-number">{{ total_folders }}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Storage location</div>
+    <div class="stat-number" style="font-size: 17px; overflow-wrap: anywhere">
+      managed_storage/
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-heading">
+    <h2>Directory Contents</h2>
+    <span class="badge"
+      >{{ total_files }} files · {{ total_folders }} folders</span
+    >
+  </div>
+
+  <div class="breadcrumbs">
+    <a href="{% url 'filemanager:home' %}">⌂ Root</a>
+    {% for crumb in breadcrumbs %}
+    <span class="separator">/</span>
+    {% if forloop.last %}
+    <strong>{{ crumb.name }}</strong>
+    {% else %}
+    <a href="{% url 'filemanager:home' %}?path={{ crumb.path|urlencode }}">
+      {{ crumb.name }}
+    </a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <div class="toolbar" style="margin-bottom: 20px">
+    <form
+      method="post"
+      enctype="multipart/form-data"
+      action="{% url 'filemanager:upload' %}"
+      class="inline-form"
+    >
+      {% csrf_token %}
+      <input type="hidden" name="path" value="{{ current_path }}" />
+      <label class="button primary" for="file-upload">＋ Upload Files</label>
+      <input
+        id="file-upload"
+        type="file"
+        name="files"
+        multiple
+        required
+        style="display: none"
+      />
+      <input type="text" name="description"
+             placeholder="Description (optional)">
+      <input type="text" name="reason"
+             placeholder="Reason for upload (optional)">
+      <button class="button primary" type="submit">Upload</button>
+    </form>
+
+    <form
+      method="post"
+      action="{% url 'filemanager:create_folder' %}"
+      class="inline-form"
+    >
+      {% csrf_token %}
+      <input type="hidden" name="path" value="{{ current_path }}" />
+      <input
+        name="folder_name"
+        placeholder="New folder name"
+        maxlength="100"
+        required
+      />
+      <button class="button" type="submit">＋ New Folder</button>
+    </form>
+  </div>
+
+  <div style="margin-bottom: 15px">
+    <input
+      id="file-search"
+      type="search"
+      placeholder="Search files and folders in this directory..."
+    />
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Size</th>
+          <th>Modified</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="file-list">
+        {% for item in entries %}
+        <tr data-name="{{ item.name|lower }}">
+          <td>
+            <span class="file-name">
+              <span
+                class="file-icon {% if item.is_dir %}folder-icon{% endif %}"
+              >
+                {% if item.is_dir %}DIR{% else %}{{ item.extension|default:".FILE" }}{% endif %}
+              </span>
+
+              {% if item.is_dir %}
+              <a
+                href="{% url 'filemanager:home' %}?path={{ item.path|urlencode }}"
+              >
+                {{ item.name }}
+              </a>
+              {% else %}
+              <span>{{ item.name }}</span>
+              {% endif %}
+            </span>
+          </td>
+
+          <td>{% if item.is_dir %}Folder{% else %}File{% endif %}</td>
+
+          <td class="muted">
+            {% if item.is_dir %}—{% else %} {{ item.size|filesizeformat }} {% endif %}
+          </td>
+
+          <td class="muted">
+            <span class="timestamp" data-time="{{ item.modified }}"></span>
+          </td>
+
+          <td>
+            <div class="actions">
+              {% if item.is_dir %}
+              <a
+                class="button small-btn"
+                href="{% url 'filemanager:home' %}?path={{ item.path|urlencode }}"
+              >
+                Open
+              </a>
+              {% else %}
+              <a
+                class="button small-btn"
+                href="{% url 'filemanager:download' item.path %}"
+              >
+                Download
+              </a>
+
+              {% if item.extension == ".pdf" %}
+              <a
+                class="button small-btn"
+                target="_blank"
+                rel="noopener"
+                href="{% url 'filemanager:preview' item.path %}"
+              >
+                Preview
+              </a>
+              {% endif %}
+
+              {% if item.extension == ".txt" or item.extension == ".py" or item.extension == ".html" or item.extension == ".htm" or item.extension == ".css" or item.extension == ".js" or item.extension == ".json" or item.extension == ".md" or item.extension == ".csv" or item.extension == ".xml" or item.extension == ".yaml" or item.extension == ".yml" or item.extension == ".toml" or item.extension == ".ini" or item.extension == ".cfg" or item.extension == ".sql" or item.extension == ".sh" or item.extension == ".bat" or item.extension == ".log" %}
+              <a class="button small-btn" href="{% url 'filemanager:edit' item.path %}">Edit</a>
+              {% endif %}
+              {% endif %}
+
+              <button
+                class="button small-btn"
+                type="button"
+                onclick="renameItem('{{ item.path|escapejs }}', '{{ item.name|escapejs }}')"
+              >
+                Rename
+              </button>
+
+              <form
+                method="post"
+                action="{% url 'filemanager:delete' %}"
+                onsubmit="return confirm('Delete {{ item.name|escapejs }}? Folders must be empty.');"
+              >
+                {% csrf_token %}
+                <input type="hidden" name="item_path" value="{{ item.path }}" />
+                <button class="button small-btn danger" type="submit">
+                  Delete
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="empty">
+            <div style="font-size: 34px">📁</div>
+            <strong>This directory is empty</strong>
+            <p>Upload files or create a new folder to get started.</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div id="no-results" class="empty" hidden>No matching files found.</div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-heading">
+    <h2>Recent Activity</h2>
+    <a class="button small-btn" href="{% url 'filemanager:activity' %}"
+      >View All</a
+    >
+  </div>
+
+  {% for log in recent_activity %}
+  <div class="activity-row">
+    <div>
+      <strong>{{ log.action }}</strong>
+      <div class="muted small">{{ log.item_name }} — {{ log.details }}</div>
+    </div>
+    <span class="muted small">{{ log.created_at|date:"M d, H:i" }}</span>
+  </div>
+  {% empty %}
+  <p class="muted">No activity recorded yet. Your changes will appear here.</p>
+  {% endfor %}
+</div>
+
+<form
+  id="rename-form"
+  method="post"
+  action="{% url 'filemanager:rename' %}"
+  hidden
+>
+  {% csrf_token %}
+  <input type="hidden" name="item_path" id="rename-path" />
+  <input type="hidden" name="new_name" id="rename-name" />
+</form>
+
+<script>
+  const searchInput = document.getElementById("file-search");
+  const rows = [...document.querySelectorAll("#file-list tr[data-name]")];
+  const noResults = document.getElementById("no-results");
+
+  searchInput.addEventListener("input", () => {
+    const query = searchInput.value.trim().toLowerCase();
+    let visible = 0;
+
+    rows.forEach((row) => {
+      const match = row.dataset.name.includes(query);
+      row.hidden = !match;
+      if (match) visible++;
+    });
+
+    noResults.hidden = visible !== 0;
+  });
+
+  function renameItem(path, oldName) {
+    const newName = prompt("Enter the new name:", oldName);
+    if (newName === null || newName.trim() === "" || newName === oldName)
+      return;
+
+    document.getElementById("rename-path").value = path;
+    document.getElementById("rename-name").value = newName.trim();
+    document.getElementById("rename-form").requestSubmit();
+  }
+
+  document.querySelectorAll(".timestamp").forEach((el) => {
+    const date = new Date(Number(el.dataset.time) * 1000);
+    el.textContent = isNaN(date) ? "—" : date.toLocaleString();
+  });
+</script>
+{% endblock %}

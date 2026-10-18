@@ -1,0 +1,189 @@
+
+{% extends "filemanager/base.html" %}
+{% block title %}Directory Tree | StorageOS{% endblock %}
+{% block top_title %}Workspace / Directory Tree{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <h1>Directory Tree</h1>
+        <p class="muted">Browse your complete storage structure and jump directly to any path.</p>
+    </div>
+    <a class="button primary" href="{% url 'filemanager:home' %}">
+        Open File Explorer
+    </a>
+</div>
+
+<div class="panel">
+    <div class="panel-heading">
+        <div>
+            <h2>Managed Storage</h2>
+            <p class="muted small">Root: managed_storage/</p>
+        </div>
+        <button class="button" type="button" onclick="toggleAll(true)">
+            Expand All
+        </button>
+        <button class="button" type="button" onclick="toggleAll(false)">
+            Collapse All
+        </button>
+    </div>
+
+    <div class="tree-search">
+        <input id="tree-search" type="search"
+               placeholder="Search file or folder names...">
+    </div>
+
+    <div class="tree-root">
+        <div class="tree-root-label">
+            <span class="tree-icon">▣</span>
+            <a href="{% url 'filemanager:home' %}">managed_storage</a>
+            <span class="muted small">/ root</span>
+        </div>
+
+        <ul class="tree-list">
+            {% for node in tree %}
+                {% include "filemanager/tree_node.html" with node=node %}
+            {% empty %}
+                <li class="tree-empty">
+                    No files or folders yet. Upload a file or create a folder in File Explorer.
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<style>
+.tree-search { margin-bottom: 22px; }
+.tree-root {
+    padding: 12px;
+    background: #fbfcff;
+    border: 1px solid #e6ebf2;
+    border-radius: 12px;
+    overflow-x: auto;
+}
+.tree-root-label {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 11px 8px;
+    font-weight: 800;
+}
+.tree-root-label a { color: #4f66e8; }
+.tree-list {
+    list-style: none;
+    padding-left: 24px;
+    margin: 0;
+}
+.tree-item { list-style: none; margin: 3px 0; }
+.tree-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 37px;
+    padding: 5px 8px;
+    border-radius: 7px;
+    white-space: nowrap;
+}
+.tree-row:hover { background: #edf1ff; }
+.tree-toggle {
+    border: 0;
+    background: transparent;
+    color: #75819a;
+    cursor: pointer;
+    width: 20px;
+    padding: 3px;
+}
+.tree-toggle:disabled { cursor: default; opacity: .35; }
+.tree-icon { width: 19px; text-align: center; }
+.tree-folder { color: #b78120; }
+.tree-file { color: #6476dc; }
+.tree-link {
+    overflow-wrap: anywhere;
+    font-weight: 600;
+}
+.tree-path {
+    color: #8993a7;
+    font-size: 11px;
+    margin-left: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tree-children {
+    border-left: 1px solid #dfe5f0;
+    margin-left: 17px;
+}
+.tree-empty {
+    list-style: none;
+    padding: 15px;
+    color: #77839a;
+}
+.tree-hidden { display: none !important; }
+@media(max-width: 650px) {
+    .tree-path { display: none; }
+    .tree-list { padding-left: 12px; }
+}
+</style>
+
+<script>
+function toggleFolder(button) {
+    const item = button.closest(".tree-item");
+    const children = item.querySelector(":scope > .tree-children");
+
+    if (!children) return;
+
+    const opening = children.classList.contains("tree-hidden");
+    children.classList.toggle("tree-hidden", !opening);
+    button.textContent = opening ? "▾" : "▸";
+    button.setAttribute("aria-expanded", String(opening));
+}
+
+function toggleAll(expand) {
+    document.querySelectorAll(".tree-children").forEach(children => {
+        children.classList.toggle("tree-hidden", !expand);
+    });
+
+    document.querySelectorAll(".tree-toggle:not(:disabled)").forEach(button => {
+        button.textContent = expand ? "▾" : "▸";
+        button.setAttribute("aria-expanded", String(expand));
+    });
+}
+
+document.getElementById("tree-search").addEventListener("input", function() {
+    const query = this.value.trim().toLowerCase();
+    const items = [...document.querySelectorAll(".tree-item")];
+
+    items.forEach(item => {
+        item.classList.remove("tree-hidden");
+        item.dataset.match = item.dataset.name.includes(query) ? "1" : "0";
+    });
+
+    if (!query) {
+        items.forEach(item => delete item.dataset.match);
+        return;
+    }
+
+    items.forEach(item => {
+        if (item.dataset.match === "1") {
+            let parent = item.parentElement.closest(".tree-item");
+
+            while (parent) {
+                parent.classList.remove("tree-hidden");
+
+                const children = parent.querySelector(":scope > .tree-children");
+                if (children) children.classList.remove("tree-hidden");
+
+                const toggle = parent.querySelector(":scope > .tree-row .tree-toggle");
+                if (toggle) {
+                    toggle.textContent = "▾";
+                    toggle.setAttribute("aria-expanded", "true");
+                }
+
+                parent = parent.parentElement.closest(".tree-item");
+            }
+        } else {
+            item.classList.add("tree-hidden");
+        }
+    });
+});
+</script>
+{% endblock %}
