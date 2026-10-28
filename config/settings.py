@@ -131,3 +131,5 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+FILE_MANAGER_ROOT = BASE_DIR / "managed_storage"
+FILE_MANAGER_ROOT.mkdir(exist_ok=True)  # folder छैन भने आफै बनाउँछ
