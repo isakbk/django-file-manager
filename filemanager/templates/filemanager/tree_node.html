@@ -1,60 +1,56 @@
-
 <li class="tree-item" data-name="{{ node.name|lower }}">
-    <div class="tree-row">
-        {% if node.is_dir %}
-            <button class="tree-toggle"
-                    type="button"
-                    onclick="toggleFolder(this)"
-                    aria-expanded="false"
-                    aria-label="Expand {{ node.name }}">▸</button>
-
-            <span class="tree-icon tree-folder">📁</span>
-
-            <a class="tree-link"
-               href="{% url 'filemanager:home' %}?path={{ node.path|urlencode }}">
-                {{ node.name }}
-            </a>
-
-            <a class="tree-path"
-               href="{% url 'filemanager:home' %}?path={{ node.path|urlencode }}">
-                Open folder →
-            </a>
-        {% else %}
-            <button class="tree-toggle" type="button" disabled>·</button>
-            <span class="tree-icon tree-file">📄</span>
-
-            {% if node.extension == ".pdf" %}
-                <a class="tree-link"
-                   href="{% url 'filemanager:preview' node.path %}"
-                   target="_blank" rel="noopener">
-                    {{ node.name }}
-                </a>
-            {% elif node.extension == ".txt" or node.extension == ".py" or node.extension == ".html" or node.extension == ".htm" or node.extension == ".css" or node.extension == ".js" or node.extension == ".json" or node.extension == ".md" or node.extension == ".csv" or node.extension == ".xml" or node.extension == ".yaml" or node.extension == ".yml" or node.extension == ".toml" or node.extension == ".ini" or node.extension == ".cfg" or node.extension == ".sql" or node.extension == ".sh" or node.extension == ".bat" or node.extension == ".log" %}
-                <a class="tree-link"
-                   href="{% url 'filemanager:edit' node.path %}">
-                    {{ node.name }}
-                </a>
-            {% else %}
-                <a class="tree-link"
-                   href="{% url 'filemanager:download' node.path %}">
-                    {{ node.name }}
-                </a>
-            {% endif %}
-
-            <a class="tree-path"
-               href="{% url 'filemanager:home' %}?path={{ node.path|urlencode }}">
-                Show location →
-            </a>
-        {% endif %}
-    </div>
-
+  <div class="tree-row">
     {% if node.is_dir %}
-        <ul class="tree-list tree-children tree-hidden">
-            {% for child in node.children %}
-                {% include "filemanager/tree_node.html" with node=child %}
-            {% empty %}
-                <li class="tree-empty">Empty folder</li>
-            {% endfor %}
-        </ul>
+      {% if node.children %}
+        <button
+          class="tree-toggle"
+          type="button"
+          onclick="toggleFolder(this)"
+          aria-label="Expand or collapse {{ node.name }}"
+          aria-expanded="true"
+        >
+          ▾
+        </button>
+      {% else %}
+        <button class="tree-toggle" type="button" disabled aria-hidden="true">•</button>
+      {% endif %}
+
+      <span class="tree-icon tree-folder">📁</span>
+
+      <a class="tree-link" href="{% url 'filemanager:home' %}?path={{ node.path|urlencode }}">
+        {{ node.name }}
+      </a>
+
+      <span class="tree-path">{{ node.path }}</span>
+
+      <form
+        class="tree-delete-form"
+        method="post"
+        action="{% url 'filemanager:delete_item' %}"
+        onsubmit="return confirmDeleteFolder('{{ node.name|escapejs }}');"
+      >
+        {% csrf_token %}
+        <input type="hidden" name="item_path" value="{{ node.path }}" />
+        <button class="tree-delete-button" type="submit" title="Delete this folder">Delete</button>
+      </form>
+    {% else %}
+      <button class="tree-toggle" type="button" disabled aria-hidden="true">•</button>
+
+      <span class="tree-icon tree-file">📄</span>
+
+      <a class="tree-link" href="{% url 'filemanager:home' %}?path={{ node.path|urlencode }}">
+        {{ node.name }}
+      </a>
+
+      <span class="tree-path">{{ node.path }}</span>
     {% endif %}
+  </div>
+
+  {% if node.is_dir and node.children %}
+    <ul class="tree-list tree-children">
+      {% for child in node.children %}
+        {% include "filemanager/tree_node.html" with node=child %}
+      {% endfor %}
+    </ul>
+  {% endif %}
 </li>

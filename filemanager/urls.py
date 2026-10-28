@@ -14,4 +14,5 @@ urlpatterns = [
     path("delete/", views.delete_item, name="delete"),
     path("activity/", views.activity, name="activity"),
     path("tree/", views.directory_tree, name="tree"),
+    path("delete/",views.delete_item,name="delete_item"),
 ]

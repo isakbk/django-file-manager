@@ -1,284 +1,520 @@
 {% extends "filemanager/base.html" %}
-
-{% block title %}File Explorer | StorageOS{% endblock %}
-
-{% block top_title %}Workspace / File Explorer{% endblock %}
-
+{% load static %}
+{% block title %}StorageOS | File Manager{% endblock %}
+{% block top_title %}Workspace / File Manager{% endblock %}
 {% block content %}
-<div class="page-heading">
+
+<style>
+  .fm-page { display: flex; flex-direction: column; gap: 22px; }
+  .fm-card { padding: 22px; border: 1px solid var(--border-color, #e5e7eb); border-radius: 14px; background: var(--card-bg, #fff); min-width: 0; }
+  .fm-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
+  .fm-heading h1, .fm-heading h2 { margin: 0; }
+  .fm-muted { color: var(--muted-color, #6b7280); font-size: 13px; }
+  .fm-form { display: flex; flex-direction: column; gap: 15px; }
+  .fm-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+  .fm-field label { font-size: 13px; font-weight: 600; }
+  .fm-field input, .fm-field textarea, .fm-field select, .fm-search { width: 100%; box-sizing: border-box; padding: 11px 12px; border: 1px solid var(--border-color, #d1d5db); border-radius: 8px; font: inherit; background: var(--input-bg, #fff); color: inherit; }
+  .fm-field textarea { min-height: 85px; resize: vertical; }
+  .fm-button { display: inline-flex; justify-content: center; align-items: center; gap: 7px; padding: 10px 15px; border: 1px solid transparent; border-radius: 8px; cursor: pointer; text-decoration: none; font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .fm-primary { color: #fff; background: #dc2626; }
+  .fm-secondary { color: inherit; background: transparent; border-color: var(--border-color, #d1d5db); }
+  .fm-danger { color: #dc2626; background: transparent; border-color: #fecaca; }
+  .fm-button:disabled { opacity: 0.55; cursor: not-allowed; }
+  .fm-upload-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr); gap: 22px; }
+  .fm-dropzone { padding: 24px 16px; text-align: center; border: 2px dashed var(--border-color, #d1d5db); border-radius: 12px; }
+  .fm-dropzone.dragging { border-color: #dc2626; background: #fef2f2; }
+  .fm-selected { display: none; margin-top: 16px; padding: 14px; border-radius: 10px; background: var(--subtle-bg, #f9fafb); }
+  .fm-selected.visible { display: block; }
+  .fm-selected-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .fm-file-list { display: flex; flex-direction: column; gap: 8px; max-height: 230px; overflow: auto; }
+  .fm-file-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 10px; border: 1px solid var(--border-color, #e5e7eb); border-radius: 8px; background: var(--card-bg, #fff); }
+  .fm-file-name { overflow-wrap: anywhere; font-size: 13px; }
+  .fm-file-size { flex-shrink: 0; font-size: 12px; color: var(--muted-color, #6b7280); }
+  .fm-toggle { display: flex; align-items: center; gap: 9px; font-size: 13px; cursor: pointer; }
+  .fm-progress-wrap { display: none; margin-top: 16px; }
+  .fm-progress-wrap.visible { display: block; }
+  .fm-progress-track { height: 9px; overflow: hidden; border-radius: 99px; background: #e5e7eb; }
+  .fm-progress-bar { width: 0; height: 100%; border-radius: inherit; background: #dc2626; transition: width 0.15s ease; }
+  .fm-progress-info { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 7px; font-size: 12px; }
+  .fm-message { display: none; padding: 12px 14px; border-radius: 8px; font-size: 13px; overflow-wrap: anywhere; }
+  .fm-message.visible { display: block; }
+  .fm-message.success { background: #ecfdf5; color: #065f46; }
+  .fm-message.error { background: #fef2f2; color: #991b1b; }
+  .fm-message.info { background: #eff6ff; color: #1d4ed8; }
+  .fm-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+  .fm-toolbar form { flex: 1; min-width: 180px; }
+  .fm-breadcrumbs { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; font-size: 13px; overflow-wrap: anywhere; }
+  .fm-breadcrumbs a { text-decoration: none; color: #dc2626; }
+  .fm-table-wrap { width: 100%; overflow-x: auto; }
+  .fm-table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 13px; }
+  .fm-table th, .fm-table td { padding: 13px 12px; border-bottom: 1px solid var(--border-color, #e5e7eb); text-align: left; vertical-align: middle; }
+  .fm-table th { font-weight: 700; color: var(--muted-color, #6b7280); white-space: nowrap; }
+  .fm-name-cell { display: flex; align-items: center; gap: 10px; overflow-wrap: anywhere; }
+  .fm-name-cell a { color: inherit; font-weight: 600; text-decoration: none; }
+  .fm-table a { text-decoration: none; }
+  .fm-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .fm-actions a, .fm-actions button { font-size: 12px; }
+  .fm-empty { padding: 30px 12px; text-align: center; color: var(--muted-color, #6b7280); }
+  .fm-activity-item { padding: 12px 0; border-bottom: 1px solid var(--border-color, #e5e7eb); overflow-wrap: anywhere; }
+  .fm-activity-item:last-child { border-bottom: 0; }
+  .fm-small-form { display: inline; margin: 0; }
+  @media (max-width: 850px) {
+    .fm-upload-grid { grid-template-columns: 1fr; }
+    .fm-card { padding: 16px; }
+  }
+</style>
+
+<div class="fm-page">
+  {% if messages %}
   <div>
-    <h1>File Explorer</h1>
-    <p class="muted">Manage your files, folders and project documents.</p>
-  </div>
-  <a class="button" href="{% url 'filemanager:activity' %}">◷ View History</a>
-</div>
-
-<div class="stats">
-  <div class="stat">
-    <div class="stat-label">Files in this directory</div>
-    <div class="stat-number">{{ total_files }}</div>
-  </div>
-  <div class="stat">
-    <div class="stat-label">Folders in this directory</div>
-    <div class="stat-number">{{ total_folders }}</div>
-  </div>
-  <div class="stat">
-    <div class="stat-label">Storage location</div>
-    <div class="stat-number" style="font-size: 17px; overflow-wrap: anywhere">
-      managed_storage/
+    {% for message in messages %}
+    <div class="fm-message visible {% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% else %}info{% endif %}" style="margin-bottom: 8px">
+      {{ message }}
     </div>
-  </div>
-</div>
-
-<div class="panel">
-  <div class="panel-heading">
-    <h2>Directory Contents</h2>
-    <span class="badge"
-      >{{ total_files }} files · {{ total_folders }} folders</span
-    >
-  </div>
-
-  <div class="breadcrumbs">
-    <a href="{% url 'filemanager:home' %}">⌂ Root</a>
-    {% for crumb in breadcrumbs %}
-    <span class="separator">/</span>
-    {% if forloop.last %}
-    <strong>{{ crumb.name }}</strong>
-    {% else %}
-    <a href="{% url 'filemanager:home' %}?path={{ crumb.path|urlencode }}">
-      {{ crumb.name }}
-    </a>
-    {% endif %}
     {% endfor %}
   </div>
+  {% endif %}
 
-  <div class="toolbar" style="margin-bottom: 20px">
-    <form
-      method="post"
-      enctype="multipart/form-data"
-      action="{% url 'filemanager:upload' %}"
-      class="inline-form"
-    >
-      {% csrf_token %}
-      <input type="hidden" name="path" value="{{ current_path }}" />
-      <label class="button primary" for="file-upload">＋ Upload Files</label>
-      <input
-        id="file-upload"
-        type="file"
-        name="files"
-        multiple
-        required
-        style="display: none"
-      />
-      <input type="text" name="description"
-             placeholder="Description (optional)">
-      <input type="text" name="reason"
-             placeholder="Reason for upload (optional)">
-      <button class="button primary" type="submit">Upload</button>
-    </form>
-
-    <form
-      method="post"
-      action="{% url 'filemanager:create_folder' %}"
-      class="inline-form"
-    >
-      {% csrf_token %}
-      <input type="hidden" name="path" value="{{ current_path }}" />
-      <input
-        name="folder_name"
-        placeholder="New folder name"
-        maxlength="100"
-        required
-      />
-      <button class="button" type="submit">＋ New Folder</button>
-    </form>
-  </div>
-
-  <div style="margin-bottom: 15px">
-    <input
-      id="file-search"
-      type="search"
-      placeholder="Search files and folders in this directory..."
-    />
-  </div>
-
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Size</th>
-          <th>Modified</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="file-list">
-        {% for item in entries %}
-        <tr data-name="{{ item.name|lower }}">
-          <td>
-            <span class="file-name">
-              <span
-                class="file-icon {% if item.is_dir %}folder-icon{% endif %}"
-              >
-                {% if item.is_dir %}DIR{% else %}{{ item.extension|default:".FILE" }}{% endif %}
-              </span>
-
-              {% if item.is_dir %}
-              <a
-                href="{% url 'filemanager:home' %}?path={{ item.path|urlencode }}"
-              >
-                {{ item.name }}
-              </a>
-              {% else %}
-              <span>{{ item.name }}</span>
-              {% endif %}
-            </span>
-          </td>
-
-          <td>{% if item.is_dir %}Folder{% else %}File{% endif %}</td>
-
-          <td class="muted">
-            {% if item.is_dir %}—{% else %} {{ item.size|filesizeformat }} {% endif %}
-          </td>
-
-          <td class="muted">
-            <span class="timestamp" data-time="{{ item.modified }}"></span>
-          </td>
-
-          <td>
-            <div class="actions">
-              {% if item.is_dir %}
-              <a
-                class="button small-btn"
-                href="{% url 'filemanager:home' %}?path={{ item.path|urlencode }}"
-              >
-                Open
-              </a>
-              {% else %}
-              <a
-                class="button small-btn"
-                href="{% url 'filemanager:download' item.path %}"
-              >
-                Download
-              </a>
-
-              {% if item.extension == ".pdf" %}
-              <a
-                class="button small-btn"
-                target="_blank"
-                rel="noopener"
-                href="{% url 'filemanager:preview' item.path %}"
-              >
-                Preview
-              </a>
-              {% endif %}
-
-              {% if item.extension == ".txt" or item.extension == ".py" or item.extension == ".html" or item.extension == ".htm" or item.extension == ".css" or item.extension == ".js" or item.extension == ".json" or item.extension == ".md" or item.extension == ".csv" or item.extension == ".xml" or item.extension == ".yaml" or item.extension == ".yml" or item.extension == ".toml" or item.extension == ".ini" or item.extension == ".cfg" or item.extension == ".sql" or item.extension == ".sh" or item.extension == ".bat" or item.extension == ".log" %}
-              <a class="button small-btn" href="{% url 'filemanager:edit' item.path %}">Edit</a>
-              {% endif %}
-              {% endif %}
-
-              <button
-                class="button small-btn"
-                type="button"
-                onclick="renameItem('{{ item.path|escapejs }}', '{{ item.name|escapejs }}')"
-              >
-                Rename
-              </button>
-
-              <form
-                method="post"
-                action="{% url 'filemanager:delete' %}"
-                onsubmit="return confirm('Delete {{ item.name|escapejs }}? Folders must be empty.');"
-              >
-                {% csrf_token %}
-                <input type="hidden" name="item_path" value="{{ item.path }}" />
-                <button class="button small-btn danger" type="submit">
-                  Delete
-                </button>
-              </form>
-            </div>
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="5" class="empty">
-            <div style="font-size: 34px">📁</div>
-            <strong>This directory is empty</strong>
-            <p>Upload files or create a new folder to get started.</p>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    <div id="no-results" class="empty" hidden>No matching files found.</div>
-  </div>
-</div>
-
-<div class="panel">
-  <div class="panel-heading">
-    <h2>Recent Activity</h2>
-    <a class="button small-btn" href="{% url 'filemanager:activity' %}"
-      >View All</a
-    >
-  </div>
-
-  {% for log in recent_activity %}
-  <div class="activity-row">
-    <div>
-      <strong>{{ log.action }}</strong>
-      <div class="muted small">{{ log.item_name }} — {{ log.details }}</div>
+  <!-- Upload -->
+  <section class="fm-card">
+    <div class="fm-heading">
+      <div>
+        <h1>Upload Files</h1>
+        <p class="fm-muted">Select files or a folder and review your selection before uploading.</p>
+      </div>
     </div>
-    <span class="muted small">{{ log.created_at|date:"M d, H:i" }}</span>
-  </div>
-  {% empty %}
-  <p class="muted">No activity recorded yet. Your changes will appear here.</p>
-  {% endfor %}
-</div>
 
-<form
-  id="rename-form"
-  method="post"
-  action="{% url 'filemanager:rename' %}"
-  hidden
->
-  {% csrf_token %}
-  <input type="hidden" name="item_path" id="rename-path" />
-  <input type="hidden" name="new_name" id="rename-name" />
-</form>
+    <div class="fm-upload-grid">
+      <div>
+        <form id="uploadForm" class="fm-form" method="post" action="{% url 'filemanager:upload' %}" enctype="multipart/form-data">
+          {% csrf_token %}
+          <input type="hidden" name="path" value="{{ current_path|default:'' }}" />
+
+          <div class="fm-field">
+            <label for="fileInput">Choose files</label>
+            <div class="fm-dropzone" id="dropZone">
+              <p style="font-size: 28px; margin: 0 0 8px">📁</p>
+              <p style="margin: 0 0 8px; font-weight: 600">Select files from your device</p>
+              <p class="fm-muted">You can select multiple files or enable folder upload.</p>
+              <input id="fileInput" type="file" name="files" multiple style="margin-top: 10px; max-width: 100%" />
+            </div>
+          </div>
+
+          <label class="fm-toggle" for="folderUploadToggle">
+            <input type="checkbox" id="folderUploadToggle" />
+            <span>Upload an entire folder (where supported)</span>
+          </label>
+
+          <div class="fm-field">
+            <label for="uploadDescription">Description</label>
+            <textarea id="uploadDescription" name="description" placeholder="Describe these files (optional)"></textarea>
+          </div>
+
+          <div class="fm-field">
+            <label for="uploadReason">Reason</label>
+            <textarea id="uploadReason" name="reason" placeholder="Why are you uploading these files? (optional)"></textarea>
+          </div>
+
+          <div class="fm-selected" id="selectedFilesPanel" aria-live="polite">
+            <div class="fm-selected-header">
+              <div>
+                <strong id="selectedCount">0 files selected</strong>
+                <div class="fm-muted" id="selectedTotalSize">Total size: 0 B</div>
+              </div>
+              <button class="fm-button fm-secondary" type="button" id="clearSelectionButton">Clear selection</button>
+            </div>
+            <div class="fm-file-list" id="selectedFilesList"></div>
+          </div>
+
+          <div class="fm-progress-wrap" id="uploadProgressWrap">
+            <div class="fm-progress-info">
+              <span id="uploadProgressText">Uploading...</span>
+              <strong id="uploadProgressPercent">0%</strong>
+            </div>
+            <div class="fm-progress-track" id="uploadProgressTrack" role="progressbar" aria-label="Upload progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div class="fm-progress-bar" id="uploadProgressBar"></div>
+            </div>
+          </div>
+
+          <div class="fm-message" id="uploadMessage" role="status" aria-live="polite"></div>
+
+          <div>
+            <button type="submit" class="fm-button fm-primary" id="uploadButton">Upload selected files</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Create folder -->
+      <aside>
+        <div style="padding: 18px; border: 1px solid var(--border-color, #e5e7eb); border-radius: 12px;">
+          <h2 style="margin-top: 0">Create Folder</h2>
+          <p class="fm-muted">Create a new folder inside the current directory.</p>
+
+          <form method="post" action="{% url 'filemanager:create_folder' %}" class="fm-form">
+            {% csrf_token %}
+            <input type="hidden" name="path" value="{{ current_path|default:'' }}" />
+
+            <div class="fm-field">
+              <label for="folderName">Folder name</label>
+              <input id="folderName" type="text" name="folder_name" placeholder="e.g. Documents" required maxlength="255" />
+            </div>
+
+            <div class="fm-field">
+              <label for="folderDescription">Description</label>
+              <textarea id="folderDescription" name="description" placeholder="Describe this folder (optional)"></textarea>
+            </div>
+
+            <div class="fm-field">
+              <label for="folderReason">Reason</label>
+              <textarea id="folderReason" name="reason" placeholder="Reason for creating this folder (optional)"></textarea>
+            </div>
+
+            <button type="submit" class="fm-button fm-primary">+ Create Folder</button>
+          </form>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- Directory listing -->
+  <section class="fm-card">
+    <div class="fm-heading">
+      <div>
+        <h2>Directory Contents</h2>
+        <p class="fm-muted">Browse your folders and manage stored files.</p>
+      </div>
+    </div>
+
+    <nav class="fm-breadcrumbs" aria-label="Breadcrumb">
+      <a href="{% url 'filemanager:home' %}">Home</a>
+      {% if breadcrumbs %}
+        {% for crumb in breadcrumbs %}
+          <span>/</span>
+          {% if not forloop.last %}
+            <a href="?path={{ crumb.path|urlencode }}">{{ crumb.name }}</a>
+          {% else %}
+            <strong>{{ crumb.name }}</strong>
+          {% endif %}
+        {% endfor %}
+      {% elif current_path %}
+        <span>/</span>
+        <strong>{{ current_path }}</strong>
+      {% endif %}
+    </nav>
+
+    <div class="fm-toolbar">
+      <form method="get" action="{% url 'filemanager:home' %}">
+        <input type="hidden" name="path" value="{{ current_path|default:'' }}" />
+        <input class="fm-search" type="search" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search files and folders..." aria-label="Search files and folders" />
+      </form>
+
+      <a class="fm-button fm-secondary" href="{% url 'filemanager:home' %}{% if current_path %}?path={{ current_path|urlencode }}{% endif %}">Refresh</a>
+    </div>
+
+    <div class="fm-table-wrap">
+      <table class="fm-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Size</th>
+            <th>Modified</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for item in items %}
+          <tr>
+            <td>
+              <div class="fm-name-cell">
+                {% if item.is_dir %}
+                  <span aria-hidden="true">📁</span>
+                  <a href="?path={{ item.path|urlencode }}">{{ item.name }}</a>
+                {% else %}
+                  <span aria-hidden="true">📄</span>
+                  <span>{{ item.name }}</span>
+                {% endif %}
+              </div>
+            </td>
+
+            <td>
+              {% if item.is_dir %}
+                Folder
+              {% else %}
+                {{ item.extension|default:".FILE" }}
+              {% endif %}
+            </td>
+
+            <td>
+              {% if item.is_dir %}
+                —
+              {% else %}
+                {{ item.size_display|default:item.size|default:"—" }}
+              {% endif %}
+            </td>
+
+            <td>{{ item.modified|default:item.modified_at|default:"—" }}</td>
+
+            <td>
+              <div class="fm-actions">
+                {% if item.is_dir %}
+                  <a class="fm-button fm-secondary" href="?path={{ item.path|urlencode }}">Open</a>
+                {% else %}
+                  <a class="fm-button fm-secondary" href="{% url 'filemanager:download' item.path %}">Download</a>
+                  <a class="fm-button fm-secondary" href="{% url 'filemanager:preview' item.path %}">Preview</a>
+
+                  {% if item.extension == ".txt" or item.extension == ".py" or item.extension == ".html" or item.extension == ".css" or item.extension == ".js" or item.extension == ".json" or item.extension == ".md" or item.extension == ".csv" or item.extension == ".xml" %}
+                    <a class="fm-button fm-secondary" href="{% url 'filemanager:edit' item.path %}">Edit</a>
+                  {% endif %}
+                {% endif %}
+
+                <form class="fm-small-form" method="post" action="{% url 'filemanager:rename' %}" onsubmit="var n = prompt('Enter new name:', '{{ item.name|escapejs }}'); if (!n) { return false; } this.new_name.value = n;">
+                  {% csrf_token %}
+                  <input type="hidden" name="item_path" value="{{ item.path }}" />
+                  <input type="hidden" name="new_name" value="" />
+                  <button type="submit" class="fm-button fm-secondary">Rename</button>
+                </form>
+
+                <form class="fm-small-form" method="post" action="{% url 'filemanager:delete' %}" onsubmit="return confirm('Delete this item?');">
+                  {% csrf_token %}
+                  <input type="hidden" name="item_path" value="{{ item.path }}" />
+                  <button type="submit" class="fm-button fm-danger">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="fm-empty">
+              <div style="font-size: 28px; margin-bottom: 8px">📂</div>
+              <strong>This folder is empty</strong>
+              <p class="fm-muted">Upload files or create a folder to get started.</p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Recent activity -->
+  <section class="fm-card">
+    <div class="fm-heading">
+      <div>
+        <h2>Recent Activity</h2>
+        <p class="fm-muted">Your latest file and folder operations.</p>
+      </div>
+      <a class="fm-button fm-secondary" href="{% url 'filemanager:activity' %}">View all activity</a>
+    </div>
+
+    <div class="fm-activity-list">
+      {% for activity in recent_activity %}
+      <div class="fm-activity-item">
+        <strong>{{ activity.action|default:"Activity" }}</strong>
+        <div style="margin-top: 4px">{{ activity.description|default:"File manager activity" }}</div>
+        {% if activity.created_at %}
+        <div class="fm-muted" style="margin-top: 4px">{{ activity.created_at }}</div>
+        {% endif %}
+      </div>
+      {% empty %}
+      <p class="fm-muted">No recent activity to display.</p>
+      {% endfor %}
+    </div>
+  </section>
+</div>
 
 <script>
-  const searchInput = document.getElementById("file-search");
-  const rows = [...document.querySelectorAll("#file-list tr[data-name]")];
-  const noResults = document.getElementById("no-results");
+  (function () {
+    "use strict";
 
-  searchInput.addEventListener("input", () => {
-    const query = searchInput.value.trim().toLowerCase();
-    let visible = 0;
+    const form = document.getElementById("uploadForm");
+    const fileInput = document.getElementById("fileInput");
+    const folderToggle = document.getElementById("folderUploadToggle");
+    const dropZone = document.getElementById("dropZone");
+    const selectedPanel = document.getElementById("selectedFilesPanel");
+    const selectedList = document.getElementById("selectedFilesList");
+    const selectedCount = document.getElementById("selectedCount");
+    const selectedTotalSize = document.getElementById("selectedTotalSize");
+    const clearButton = document.getElementById("clearSelectionButton");
+    const uploadButton = document.getElementById("uploadButton");
+    const progressWrap = document.getElementById("uploadProgressWrap");
+    const progressBar = document.getElementById("uploadProgressBar");
+    const progressText = document.getElementById("uploadProgressText");
+    const progressPercent = document.getElementById("uploadProgressPercent");
+    const progressTrack = document.getElementById("uploadProgressTrack");
+    const messageBox = document.getElementById("uploadMessage");
 
-    rows.forEach((row) => {
-      const match = row.dataset.name.includes(query);
-      row.hidden = !match;
-      if (match) visible++;
+    if (!form || !fileInput) return;
+
+    function formatBytes(bytes) {
+      if (!Number.isFinite(bytes) || bytes < 0) return "Unknown size";
+      if (bytes < 1024) return bytes + " B";
+      const units = ["KB", "MB", "GB", "TB"];
+      let size = bytes / 1024;
+      let index = 0;
+      while (size >= 1024 && index < units.length - 1) {
+        size /= 1024;
+        index++;
+      }
+      return size.toFixed(size < 10 ? 2 : 1) + " " + units[index];
+    }
+
+    function showMessage(text, type) {
+      messageBox.textContent = text;
+      messageBox.className = "fm-message visible " + type;
+    }
+
+    function clearMessage() {
+      messageBox.textContent = "";
+      messageBox.className = "fm-message";
+    }
+
+    function updateSelection(files) {
+      const selectedFiles = Array.from(files || []);
+      selectedList.replaceChildren();
+      if (!selectedFiles.length) {
+        selectedPanel.classList.remove("visible");
+        return;
+      }
+      selectedPanel.classList.add("visible");
+      const totalSize = selectedFiles.reduce((sum, file) => sum + file.size, 0);
+      selectedCount.textContent = selectedFiles.length + (selectedFiles.length === 1 ? " file selected" : " files selected");
+      selectedTotalSize.textContent = "Total size: " + formatBytes(totalSize);
+      selectedFiles.forEach((file, index) => {
+        const row = document.createElement("div");
+        row.className = "fm-file-row";
+        const name = document.createElement("span");
+        name.className = "fm-file-name";
+        name.textContent = index + 1 + ". " + (file.webkitRelativePath || file.name);
+        const size = document.createElement("span");
+        size.className = "fm-file-size";
+        size.textContent = formatBytes(file.size);
+        row.append(name, size);
+        selectedList.appendChild(row);
+      });
+    }
+
+    function setProgress(percent, text) {
+      const value = Math.max(0, Math.min(100, percent));
+      progressWrap.classList.add("visible");
+      progressBar.style.width = value + "%";
+      progressPercent.textContent = Math.round(value) + "%";
+      progressText.textContent = text;
+      progressTrack.setAttribute("aria-valuenow", String(Math.round(value)));
+    }
+
+    function setUploading(isUploading) {
+      uploadButton.disabled = isUploading;
+      clearButton.disabled = isUploading;
+      fileInput.disabled = isUploading;
+      folderToggle.disabled = isUploading;
+      uploadButton.textContent = isUploading ? "Uploading..." : "Upload selected files";
+    }
+
+    fileInput.addEventListener("change", function () {
+      updateSelection(fileInput.files);
+      clearMessage();
     });
 
-    noResults.hidden = visible !== 0;
-  });
+    folderToggle.addEventListener("change", function () {
+      if (folderToggle.checked) {
+        fileInput.setAttribute("webkitdirectory", "");
+        fileInput.setAttribute("directory", "");
+        fileInput.setAttribute("multiple", "");
+      } else {
+        fileInput.removeAttribute("webkitdirectory");
+        fileInput.removeAttribute("directory");
+        fileInput.setAttribute("multiple", "");
+      }
+      fileInput.value = "";
+      updateSelection([]);
+      clearMessage();
+    });
 
-  function renameItem(path, oldName) {
-    const newName = prompt("Enter the new name:", oldName);
-    if (newName === null || newName.trim() === "" || newName === oldName)
-      return;
+    clearButton.addEventListener("click", function () {
+      fileInput.value = "";
+      updateSelection([]);
+      clearMessage();
+    });
 
-    document.getElementById("rename-path").value = path;
-    document.getElementById("rename-name").value = newName.trim();
-    document.getElementById("rename-form").requestSubmit();
-  }
+    ["dragenter", "dragover"].forEach(function (eventName) {
+      dropZone.addEventListener(eventName, function (event) {
+        event.preventDefault();
+        dropZone.classList.add("dragging");
+      });
+    });
 
-  document.querySelectorAll(".timestamp").forEach((el) => {
-    const date = new Date(Number(el.dataset.time) * 1000);
-    el.textContent = isNaN(date) ? "—" : date.toLocaleString();
-  });
+    ["dragleave", "drop"].forEach(function (eventName) {
+      dropZone.addEventListener(eventName, function (event) {
+        event.preventDefault();
+        dropZone.classList.remove("dragging");
+      });
+    });
+
+    dropZone.addEventListener("drop", function (event) {
+      const droppedFiles = event.dataTransfer && event.dataTransfer.files;
+      if (!droppedFiles || !droppedFiles.length) return;
+      try {
+        const transfer = new DataTransfer();
+        Array.from(droppedFiles).forEach((file) => transfer.items.add(file));
+        fileInput.files = transfer.files;
+        updateSelection(fileInput.files);
+        clearMessage();
+      } catch (error) {
+        showMessage("Please use the file picker to select files.", "error");
+      }
+    });
+
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      clearMessage();
+      if (!fileInput.files || !fileInput.files.length) {
+        showMessage("Please select at least one file or folder before uploading.", "error");
+        return;
+      }
+      const files = Array.from(fileInput.files);
+      const formData = new FormData(form);
+      files.forEach(function (file) {
+        formData.append("relative_paths", file.webkitRelativePath || file.name);
+      });
+      setUploading(true);
+      setProgress(0, "Preparing upload...");
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", form.action, true);
+      xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+      xhr.upload.addEventListener("progress", function (event) {
+        if (event.lengthComputable) {
+          setProgress((event.loaded / event.total) * 100, "Uploading files...");
+        } else {
+          progressText.textContent = "Uploading files...";
+        }
+      });
+      xhr.addEventListener("load", function () {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          setProgress(100, "Upload complete.");
+          showMessage("Upload request completed. Reloading the directory...", "success");
+          window.location.reload();
+        } else {
+          const text = xhr.status === 403
+            ? "Upload rejected (403). Check your login and CSRF settings."
+            : "Upload failed (HTTP " + xhr.status + "). Please try again.";
+          showMessage(text, "error");
+          progressText.textContent = "Upload failed.";
+          setUploading(false);
+        }
+      });
+      xhr.addEventListener("error", function () {
+        showMessage("A network error interrupted the upload. Check your connection and try again.", "error");
+        progressText.textContent = "Network error.";
+        setUploading(false);
+      });
+      xhr.addEventListener("abort", function () {
+        showMessage("The upload was cancelled.", "error");
+        setUploading(false);
+      });
+      xhr.send(formData);
+    });
+  })();
 </script>
 {% endblock %}

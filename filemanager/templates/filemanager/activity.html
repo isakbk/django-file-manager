@@ -4,48 +4,54 @@
 
 {% block content %}
 <div class="page-heading">
-    <div>
-        <h1>Activity History</h1>
-        <p class="muted">Review the latest changes made through StorageOS.</p>
-    </div>
-    <a class="button primary" href="{% url 'filemanager:home' %}">← File Explorer</a>
+  <div>
+    <h1>Activity History</h1>
+    <p class="muted">Review the latest changes made through StorageOS.</p>
+  </div>
+  <a class="button primary" href="{% url 'filemanager:home' %}">← File Explorer</a>
 </div>
 
 <div class="panel">
-    <div class="panel-heading">
-        <h2>Recent Operations</h2>
-        <span class="badge">Latest 500 records</span>
-    </div>
+  <div class="panel-heading">
+    <h2>Recent Operations</h2>
+    <span class="badge">Latest {{ logs|length }} records</span>
+  </div>
 
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Action</th>
-                    <th>Item</th>
-                    <th>Path</th>
-                    <th>Details</th>
-                    <th>Date & Time</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for log in logs %}
-                    <tr>
-                        <td><span class="badge">{{ log.action }}</span></td>
-                        <td>{{ log.item_name }}</td>
-                        <td class="muted">{{ log.item_path }}</td>
-                        <td class="muted">{{ log.details|default:"—" }}</td>
-                        <td class="muted">{{ log.created_at|date:"Y-m-d H:i:s" }}</td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="5" class="empty">
-                            No activity has been recorded yet.
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Action</th>
+          <th>Item</th>
+          <th>Path</th>
+          <th>Description</th>
+          <th>Reason</th>
+          <th>Details</th>
+          <th>Date &amp; Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+          <tr>
+            <td>
+              <span class="badge">{{ log.action }}</span>
+            </td>
+            <td>{{ log.item_name }}</td>
+            <td class="muted">{{ log.item_path }}</td>
+            <td class="muted">{{ log.description|default:"—" }}</td>
+            <td class="muted">{{ log.reason|default:"—" }}</td>
+            <td class="muted">{{ log.details|default:"—" }}</td>
+            <td class="muted">{{ log.created_at|date:"Y-m-d H:i:s" }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" class="empty">
+              No activity has been recorded yet.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}
