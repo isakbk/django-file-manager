@@ -40,7 +40,7 @@ SECRET_KEY = "django-insecure-w^s6(2%u(26so7s5zvyl*l&di-%zi-qqk@=e4cy+0r#jl570%r
 
 # SECURITY WARNING: don't run with debug turned on in production!
 
-DEBUG = True
+DEBUG = False
 
 
 ALLOWED_HOSTS = ["openmanager.pythonanywhere.com", "127.0.0.1", "localhost"]
