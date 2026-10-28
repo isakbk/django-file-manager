@@ -19,7 +19,6 @@
       }
 
       * { box-sizing: border-box; }
-
       html, body { height: 100%; }
 
       body {
@@ -33,13 +32,13 @@
       button, a { -webkit-tap-highlight-color: transparent; }
       a { color: inherit; text-decoration: none; }
 
-      /* ---------- Layout: full-height, sidebar + main ---------- */
+      /* ---------- Layout ---------- */
       .layout {
         min-height: 100vh;
         display: flex;
       }
 
-      /* ---------- Sidebar: fixed (sticky) ---------- */
+      /* ---------- Sidebar: STICKY ---------- */
       .sidebar {
         width: 240px;
         flex-shrink: 0;
@@ -82,7 +81,7 @@
         color: #aab7cd;
       }
 
-      /* ---------- Main column ---------- */
+      /* ---------- Main Column ---------- */
       .main {
         flex: 1;
         min-width: 0;
@@ -90,7 +89,7 @@
         flex-direction: column;
       }
 
-      /* ---------- Header: fixed (sticky) ---------- */
+      /* ---------- Header: STICKY ---------- */
       .topbar {
         height: 76px;
         padding: 0 32px;
@@ -313,7 +312,7 @@
         .sidebar {
           width: 100%;
           height: auto;
-          position: static;        /* stop sticking on mobile */
+          position: static;  /* Stop sticking on mobile */
           overflow-y: visible;
           padding: 15px;
         }
@@ -324,7 +323,7 @@
 
         .topbar {
           height: 58px;
-          position: sticky;        /* keep header sticky on mobile */
+          position: sticky;  /* Keep header sticky on mobile */
           top: 0;
         }
 
@@ -407,7 +406,8 @@
         );
       })();
     </script>
-
+    
+    <!-- FIXED: Added missing script tag for static files -->
     <script src="{% static 'js/adaptive-network.js' %}" defer></script>
   </body>
 </html>

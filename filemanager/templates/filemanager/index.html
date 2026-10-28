@@ -51,6 +51,7 @@
   .fm-table th { font-weight: 700; color: var(--muted-color, #6b7280); white-space: nowrap; }
   .fm-name-cell { display: flex; align-items: center; gap: 10px; overflow-wrap: anywhere; }
   .fm-name-cell a { color: inherit; font-weight: 600; text-decoration: none; }
+  .fm-name-cell a:hover { color: #dc2626; }
   .fm-table a { text-decoration: none; }
   .fm-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .fm-actions a, .fm-actions button { font-size: 12px; }
@@ -233,7 +234,7 @@
                   <a href="?path={{ item.path|urlencode }}">{{ item.name }}</a>
                 {% else %}
                   <span aria-hidden="true">📄</span>
-                  <span>{{ item.name }}</span>
+                  <a href="{% url 'filemanager:preview' item.path %}" target="_blank" rel="noopener">{{ item.name }}</a>
                 {% endif %}
               </div>
             </td>
@@ -261,10 +262,10 @@
                 {% if item.is_dir %}
                   <a class="fm-button fm-secondary" href="?path={{ item.path|urlencode }}">Open</a>
                 {% else %}
+                  <a class="fm-button fm-secondary" href="{% url 'filemanager:preview' item.path %}" target="_blank" rel="noopener">Open</a>
                   <a class="fm-button fm-secondary" href="{% url 'filemanager:download' item.path %}">Download</a>
-                  <a class="fm-button fm-secondary" href="{% url 'filemanager:preview' item.path %}">Preview</a>
 
-                  {% if item.extension == ".txt" or item.extension == ".py" or item.extension == ".html" or item.extension == ".css" or item.extension == ".js" or item.extension == ".json" or item.extension == ".md" or item.extension == ".csv" or item.extension == ".xml" %}
+                  {% if item.extension == ".txt" or item.extension == ".py" or item.extension == ".html" or item.extension == ".htm" or item.extension == ".css" or item.extension == ".js" or item.extension == ".json" or item.extension == ".md" or item.extension == ".csv" or item.extension == ".xml" or item.extension == ".yaml" or item.extension == ".yml" or item.extension == ".toml" or item.extension == ".ini" or item.extension == ".cfg" or item.extension == ".sql" or item.extension == ".sh" or item.extension == ".bat" or item.extension == ".log" or item.extension == ".ipynb" %}
                     <a class="fm-button fm-secondary" href="{% url 'filemanager:edit' item.path %}">Edit</a>
                   {% endif %}
                 {% endif %}

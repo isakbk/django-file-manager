@@ -1,4 +1,4 @@
-
+import mimetypes
 import os
 import shutil
 from pathlib import Path
@@ -26,7 +26,7 @@ MAX_UPLOAD_SIZE = 50 * 1024 * 1024   # 50 MB
 EDITABLE_EXTENSIONS = {
     ".txt", ".py", ".html", ".htm", ".css", ".js", ".json",
     ".md", ".csv", ".xml", ".yaml", ".yml", ".toml", ".ini",
-    ".cfg", ".sql", ".sh", ".bat", ".log", ".example",'ipynb',
+    ".cfg", ".sql", ".sh", ".bat", ".log", ".example", ".ipynb",
 }
 
 
@@ -145,12 +145,8 @@ def home(request):
             })
 
     context = {
-        # "items" matches the index.html template.
         "items": entries,
-
-        # Keep "entries" for compatibility with older templates.
         "entries": entries,
-
         "current_path": current_relative,
         "breadcrumbs": breadcrumbs,
         "total_files": sum(not item["is_dir"] for item in entries),
@@ -374,10 +370,16 @@ def download_file(request, path):
 
 
 # =========================================================
-# PDF PREVIEW
+# OPEN / PREVIEW FILE  (inline, any file type)
 # =========================================================
 
 def preview_file(request, path):
+    """
+    Serve ANY file inline so it opens in the browser instead of
+    downloading. Works for text, JSON, notebooks, images, PDFs, etc.
+    Unknown binary types fall back to application/octet-stream, which
+    the browser will still display or download depending on the type.
+    """
     try:
         target = get_safe_path(path)
     except (ValueError, OSError):
@@ -386,15 +388,17 @@ def preview_file(request, path):
     if target.is_symlink() or not target.is_file():
         raise Http404("File not found.")
 
-    if target.suffix.lower() != ".pdf":
-        raise Http404("Only PDF preview is supported.")
+    content_type, _ = mimetypes.guess_type(target.name)
+    if not content_type:
+        content_type = "application/octet-stream"
 
     response = FileResponse(
         target.open("rb"),
-        content_type="application/pdf",
+        content_type=content_type,
     )
 
-    response["Content-Disposition"] = 'inline; filename="document.pdf"'
+    # Inline so the browser opens the file rather than downloading it.
+    response["Content-Disposition"] = f'inline; filename="{target.name}"'
     response["X-Content-Type-Options"] = "nosniff"
 
     return response

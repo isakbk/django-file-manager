@@ -96,12 +96,33 @@
   }
 
   function toggleAll(expand) {
+    // Clear any active search so the tree is in a consistent state.
+    const search = document.getElementById("tree-search");
+    if (search && search.value) {
+      search.value = "";
+      resetSearch();
+    }
+
     document.querySelectorAll(".tree-children").forEach(children => {
       children.classList.toggle("tree-hidden", !expand);
     });
     document.querySelectorAll(".tree-toggle:not(:disabled)").forEach(button => {
       button.textContent = expand ? "▾" : "▸";
       button.setAttribute("aria-expanded", String(expand));
+    });
+  }
+
+  function resetSearch() {
+    document.querySelectorAll(".tree-item").forEach(item => {
+      item.classList.remove("tree-hidden");
+      delete item.dataset.match;
+    });
+    document.querySelectorAll(".tree-children").forEach(children => {
+      children.classList.remove("tree-hidden");
+    });
+    document.querySelectorAll(".tree-toggle:not(:disabled)").forEach(button => {
+      button.textContent = "▾";
+      button.setAttribute("aria-expanded", "true");
     });
   }
 
