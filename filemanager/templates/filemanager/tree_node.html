@@ -38,9 +38,15 @@
 
       <span class="tree-icon tree-file">📄</span>
 
-      <a class="tree-link" href="{% url 'filemanager:home' %}?path={{ node.path|urlencode }}">
-        {{ node.name }}
-      </a>
+      {% if node.extension == ".pdf" %}
+        <a class="tree-link" href="{% url 'filemanager:preview' node.path %}" target="_blank" rel="noopener">
+          {{ node.name }}
+        </a>
+      {% else %}
+        <a class="tree-link" href="{% url 'filemanager:edit' node.path %}" target="_blank" rel="noopener">
+          {{ node.name }}
+        </a>
+      {% endif %}
 
       <span class="tree-path">{{ node.path }}</span>
     {% endif %}
