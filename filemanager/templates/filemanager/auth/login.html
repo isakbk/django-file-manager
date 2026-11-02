@@ -1,0 +1,40 @@
+{% extends "filemanager/base.html" %}
+{% block title %}Login | StorageOS{% endblock %}
+{% block top_title %}System / Login{% endblock %}
+
+{% block content %}
+<div class="page-heading" style="justify-content: center; margin-top: 5vh;">
+  <div style="text-align: center;">
+    <h1>Sign In</h1>
+    <p class="muted">Access your private StorageOS workspace.</p>
+  </div>
+</div>
+
+<div class="panel" style="max-width: 400px; margin: 0 auto;">
+  <form method="post" class="fm-form">
+    {% csrf_token %}
+    
+    {% if form.non_field_errors %}
+      <div class="message error" style="display:block;">{{ form.non_field_errors.0 }}</div>
+    {% endif %}
+
+    <div class="fm-field">
+      <label for="id_username">Username</label>
+      <input type="text" name="username" id="id_username" required autofocus autocomplete="username">
+      {% if form.username.errors %}<div class="message error" style="display:block; padding: 5px;">{{ form.username.errors.0 }}</div>{% endif %}
+    </div>
+
+    <div class="fm-field">
+      <label for="id_password">Password</label>
+      <input type="password" name="password" id="id_password" required autocomplete="current-password">
+      {% if form.password.errors %}<div class="message error" style="display:block; padding: 5px;">{{ form.password.errors.0 }}</div>{% endif %}
+    </div>
+
+    <button type="submit" class="button primary" style="margin-top: 10px;">Sign In</button>
+    
+    <p class="muted small" style="text-align: center; margin-top: 15px;">
+      Don't have an account? <a href="{% url 'filemanager:register' %}" style="color: var(--primary); font-weight: bold;">Register here</a>
+    </p>
+  </form>
+</div>
+{% endblock %}

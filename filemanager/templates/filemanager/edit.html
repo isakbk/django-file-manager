@@ -1,41 +1,111 @@
-{% extends "filemanager/base.html" %}
-{% block title %}Edit {{ file_name }} | StorageOS{% endblock %}
-{% block top_title %}Workspace / Edit File{% endblock %}
-
+{% extends "filemanager/base.html" %} {% block title %}Edit {{ file_name }} |
+StorageOS{% endblock %} {% block top_title %}Workspace / Edit File{% endblock %}
 {% block content %}
 <div class="page-heading">
-    <div>
-        <h1>Edit File</h1>
-        <p class="muted">Modify the file content and save it to local storage.</p>
-    </div>
-    <a class="button" href="{% url 'filemanager:home' %}?path={{ file_path|urlencode }}">← Back to Folder</a>
+  <div>
+    <h1>Edit File</h1>
+    <p class="muted">Modify the file content and save it to local storage.</p>
+  </div>
+  <a
+    class="button"
+    href="{% url 'filemanager:home' %}?path={{ file_path|urlencode }}"
+    >← Back to Folder</a
+  >
 </div>
 
 <div class="panel">
-    <div class="panel-heading">
-        <div>
-            <h2>{{ file_name }}</h2>
-            <p class="muted small">{{ file_path }}</p>
-        </div>
-        <span class="badge">TEXT EDITOR</span>
+  <div class="panel-heading">
+    <div>
+      <h2>{{ file_name }}</h2>
+      <p class="muted small">{{ file_path }}</p>
     </div>
+    <span class="badge">TEXT EDITOR</span>
+  </div>
 
-    <form method="post">
-        {% csrf_token %}
-        <textarea class="editor" name="content" spellcheck="false"
-                  autocapitalize="off" autocomplete="off"
-                  aria-label="File content">{{ content }}</textarea>
+  <form method="post">
+    {% csrf_token %}
+    <textarea
+      class="editor"
+      name="content"
+      spellcheck="false"
+      autocapitalize="off"
+      autocomplete="off"
+      aria-label="File content"
+    >
+{{ content }}</textarea
+    >
 
-        <div class="editor-actions">
-            <span class="muted small">Maximum file size: 2 MB. Save carefully.</span>
-            <div class="toolbar">
-                <a class="button" href="{% url 'filemanager:home' %}?path={{ file_path|urlencode }}">Cancel</a>
-                <button class="button primary" type="submit"
-                        onclick="return confirm('Save changes to this file?')">
-                    Save Changes
-                </button>
-            </div>
-        </div>
+    <div class="editor-actions">
+      <span class="muted small">Maximum file size: 2 MB.</span>
+      <div class="toolbar">
+        {% if backups %}
+        <button
+          type="button"
+          class="button"
+          onclick="
+            document.getElementById('undoBox').style.display =
+              document.getElementById('undoBox').style.display === 'none'
+                ? 'block'
+                : 'none'
+          "
+        >
+          Undo / History
+        </button>
+        {% endif %}
+        <a
+          class="button"
+          href="{% url 'filemanager:home' %}?path={{ file_path|urlencode }}"
+          >Cancel</a
+        >
+        <button
+          class="button primary"
+          type="submit"
+          onclick="return confirm('Save changes?');"
+        >
+          Save Changes
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <!-- UNDO MENU -->
+  {% if backups %}
+  <div
+    id="undoBox"
+    style="
+      display: none;
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #fecaca;
+      background: #fef2f2;
+      border-radius: 8px;
+    "
+  >
+    <h3 style="margin-top: 0; color: #991b1b">Undo History</h3>
+    <p class="muted small">
+      Restoring a backup will replace the current file content.
+    </p>
+
+    {% for b in backups %}
+    <form
+      method="post"
+      action="{% url 'filemanager:restore_backup' %}"
+      style="display: inline-block; margin-right: 10px; margin-bottom: 10px"
+    >
+      {% csrf_token %}
+      <input type="hidden" name="file_path" value="{{ file_path }}" />
+      <input type="hidden" name="backup_name" value="{{ b }}" />
+      <button
+        type="submit"
+        class="button"
+        style="border-color: #dc2626; color: #dc2626"
+        onclick="return confirm('Restore this version?');"
+      >
+        ↺ Restore {{ b }}
+      </button>
     </form>
+    {% endfor %}
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

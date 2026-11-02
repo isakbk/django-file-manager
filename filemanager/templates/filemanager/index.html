@@ -2,191 +2,239 @@
 {% load static %}
 {% block title %}StorageOS | File Manager{% endblock %}
 {% block top_title %}Workspace / File Manager{% endblock %}
-{% block content %}
 
+{% block content %}
 <style>
-  .fm-page { display: flex; flex-direction: column; gap: 22px; }
-  .fm-card { padding: 22px; border: 1px solid var(--border-color, #e5e7eb); border-radius: 14px; background: var(--card-bg, #fff); min-width: 0; }
-  .fm-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
-  .fm-heading h1, .fm-heading h2 { margin: 0; }
-  .fm-muted { color: var(--muted-color, #6b7280); font-size: 13px; }
-  .fm-form { display: flex; flex-direction: column; gap: 15px; }
-  .fm-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
-  .fm-field label { font-size: 13px; font-weight: 600; }
-  .fm-field input, .fm-field textarea, .fm-field select, .fm-search { width: 100%; box-sizing: border-box; padding: 11px 12px; border: 1px solid var(--border-color, #d1d5db); border-radius: 8px; font: inherit; background: var(--input-bg, #fff); color: inherit; }
-  .fm-field textarea { min-height: 85px; resize: vertical; }
-  .fm-button { display: inline-flex; justify-content: center; align-items: center; gap: 7px; padding: 10px 15px; border: 1px solid transparent; border-radius: 8px; cursor: pointer; text-decoration: none; font-size: 13px; font-weight: 600; white-space: nowrap; }
-  .fm-primary { color: #fff; background: #dc2626; }
-  .fm-secondary { color: inherit; background: transparent; border-color: var(--border-color, #d1d5db); }
-  .fm-danger { color: #dc2626; background: transparent; border-color: #fecaca; }
-  .fm-button:disabled { opacity: 0.55; cursor: not-allowed; }
-  .fm-upload-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr); gap: 22px; }
-  .fm-dropzone { padding: 24px 16px; text-align: center; border: 2px dashed var(--border-color, #d1d5db); border-radius: 12px; }
-  .fm-dropzone.dragging { border-color: #dc2626; background: #fef2f2; }
-  .fm-selected { display: none; margin-top: 16px; padding: 14px; border-radius: 10px; background: var(--subtle-bg, #f9fafb); }
-  .fm-selected.visible { display: block; }
-  .fm-selected-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-  .fm-file-list { display: flex; flex-direction: column; gap: 8px; max-height: 230px; overflow: auto; }
-  .fm-file-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 10px; border: 1px solid var(--border-color, #e5e7eb); border-radius: 8px; background: var(--card-bg, #fff); }
-  .fm-file-name { overflow-wrap: anywhere; font-size: 13px; }
-  .fm-file-size { flex-shrink: 0; font-size: 12px; color: var(--muted-color, #6b7280); }
-  .fm-toggle { display: flex; align-items: center; gap: 9px; font-size: 13px; cursor: pointer; }
-  .fm-progress-wrap { display: none; margin-top: 16px; }
-  .fm-progress-wrap.visible { display: block; }
-  .fm-progress-track { height: 9px; overflow: hidden; border-radius: 99px; background: #e5e7eb; }
-  .fm-progress-bar { width: 0; height: 100%; border-radius: inherit; background: #dc2626; transition: width 0.15s ease; }
-  .fm-progress-info { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 7px; font-size: 12px; }
-  .fm-message { display: none; padding: 12px 14px; border-radius: 8px; font-size: 13px; overflow-wrap: anywhere; }
-  .fm-message.visible { display: block; }
-  .fm-message.success { background: #ecfdf5; color: #065f46; }
-  .fm-message.error { background: #fef2f2; color: #991b1b; }
-  .fm-message.info { background: #eff6ff; color: #1d4ed8; }
-  .fm-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
-  .fm-toolbar form { flex: 1; min-width: 180px; }
-  .fm-breadcrumbs { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; font-size: 13px; overflow-wrap: anywhere; }
-  .fm-breadcrumbs a { text-decoration: none; color: #dc2626; }
-  .fm-table-wrap { width: 100%; overflow-x: auto; }
-  .fm-table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 13px; }
-  .fm-table th, .fm-table td { padding: 13px 12px; border-bottom: 1px solid var(--border-color, #e5e7eb); text-align: left; vertical-align: middle; }
-  .fm-table th { font-weight: 700; color: var(--muted-color, #6b7280); white-space: nowrap; }
-  .fm-name-cell { display: flex; align-items: center; gap: 10px; overflow-wrap: anywhere; }
-  .fm-name-cell a { color: inherit; font-weight: 600; text-decoration: none; }
-  .fm-name-cell a:hover { color: #dc2626; }
-  .fm-table a { text-decoration: none; }
-  .fm-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-  .fm-actions a, .fm-actions button { font-size: 12px; }
-  .fm-empty { padding: 30px 12px; text-align: center; color: var(--muted-color, #6b7280); }
-  .fm-activity-item { padding: 12px 0; border-bottom: 1px solid var(--border-color, #e5e7eb); overflow-wrap: anywhere; }
-  .fm-activity-item:last-child { border-bottom: 0; }
-  .fm-small-form { display: inline; margin: 0; }
-  @media (max-width: 850px) {
-    .fm-upload-grid { grid-template-columns: 1fr; }
-    .fm-card { padding: 16px; }
+  /* ==========================================================================
+     File Manager Custom CSS
+     ========================================================================== */
+  .fm-page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
   }
+
+  /* Cards */
+  .fm-card {
+    background: var(--panel, #fff);
+    border: 1px solid var(--line, #e6ebf2);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+    position: relative;
+  }
+
+  .fm-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .fm-title h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink, #182338);
+    margin: 0 0 4px 0;
+  }
+
+  .fm-title p {
+    color: var(--muted, #77839a);
+    font-size: 13px;
+    margin: 0;
+  }
+
+  /* Buttons */
+  .fm-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .fm-btn-primary {
+    background: #e61b2b;
+    color: #fff;
+  }
+  .fm-btn-primary:hover { background: #cf1625; }
+
+  .fm-btn-secondary {
+    background: #fff;
+    border-color: var(--line, #e6ebf2);
+    color: var(--ink, #182338);
+  }
+  .fm-btn-secondary:hover { background: #f8faff; border-color: #cbd5e1; }
+
+  /* Breadcrumbs */
+  .fm-breadcrumbs {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+  .fm-breadcrumbs a { color: #e61b2b; text-decoration: none; font-weight: 500; }
+  .fm-breadcrumbs a:hover { text-decoration: underline; }
+  .fm-breadcrumbs span { color: var(--muted, #77839a); }
+  .fm-breadcrumbs strong { color: var(--ink, #182338); }
+
+  /* Table Structure */
+  .fm-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+  }
+  
+  .fm-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+  }
+  .fm-table th {
+    font-size: 12px;
+    color: var(--muted, #77839a);
+    font-weight: 600;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line, #e6ebf2);
+    white-space: nowrap;
+  }
+  .fm-table td {
+    padding: 16px;
+    border-bottom: 1px solid var(--line, #e6ebf2);
+    vertical-align: middle;
+  }
+  .fm-table tr:last-child td { border-bottom: none; }
+  .fm-table tr:hover td { background: #fafbff; }
+
+  /* File/Folder Items */
+  .fm-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+    color: var(--ink, #182338);
+  }
+  .fm-icon { font-size: 18px; }
+  
+  /* Action Buttons */
+  .fm-more-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted, #77839a);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 12px;
+    border-radius: 6px;
+    line-height: 1;
+    transition: background 0.2s;
+  }
+  .fm-more-btn:hover { background: #f1f5f9; color: var(--ink); }
+
+  /* FLOATING DROPDOWN MENU */
+  .fm-dropdown {
+    position: fixed;
+    background: #fff;
+    border: 1px solid var(--line, #e6ebf2);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    min-width: 160px;
+    z-index: 9999;
+    display: none;
+    flex-direction: column;
+    padding: 6px 0;
+  }
+  .fm-dropdown.show { display: flex; }
+
+  .fm-dropdown a, 
+  .fm-dropdown button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 10px 16px;
+    font-size: 13px;
+    color: var(--ink, #182338);
+    text-decoration: none;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+  .fm-dropdown a:hover, 
+  .fm-dropdown button:hover { background: #f8faff; color: #e61b2b; }
+  .fm-dropdown button.danger { color: #dc2626; }
+  .fm-dropdown button.danger:hover { background: #fef2f2; }
+
+  .fm-small-form { margin: 0; padding: 0; }
+
+  /* Upload Area */
+  .fm-upload-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  @media (max-width: 768px) {
+    .fm-upload-area { grid-template-columns: 1fr; }
+  }
+
+  .fm-dropzone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    background: #f8faff;
+    transition: all 0.2s;
+  }
+  .fm-dropzone:hover, .fm-dropzone.dragging { border-color: #e61b2b; background: #fef2f2; }
+  
+  .fm-form-group { margin-bottom: 16px; }
+  .fm-form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .fm-form-group input, .fm-form-group textarea {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--line, #e6ebf2); border-radius: 8px; font: inherit;
+  }
+
+  /* Empty State */
+  .fm-empty { text-align: center; padding: 40px 20px; color: var(--muted, #77839a); }
 </style>
 
 <div class="fm-page">
+  
+  <!-- Messages -->
   {% if messages %}
   <div>
     {% for message in messages %}
-    <div class="fm-message visible {% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% else %}info{% endif %}" style="margin-bottom: 8px">
+    <div class="message {% if message.tags == 'error' %}error{% endif %}" style="margin-bottom: 12px; padding: 12px; border-radius: 8px; font-weight: 500; background: {% if message.tags == 'error' %}#fef2f2{% else %}#ecfdf5{% endif %}; color: {% if message.tags == 'error' %}#dc2626{% else %}#065f46{% endif %};">
       {{ message }}
     </div>
     {% endfor %}
   </div>
   {% endif %}
 
-  <!-- Upload -->
+  <!-- Directory Contents -->
   <section class="fm-card">
-    <div class="fm-heading">
-      <div>
-        <h1>Upload Files</h1>
-        <p class="fm-muted">Select files or a folder and review your selection before uploading.</p>
-      </div>
-    </div>
-
-    <div class="fm-upload-grid">
-      <div>
-        <form id="uploadForm" class="fm-form" method="post" action="{% url 'filemanager:upload' %}" enctype="multipart/form-data">
-          {% csrf_token %}
-          <input type="hidden" name="path" value="{{ current_path|default:'' }}" />
-
-          <div class="fm-field">
-            <label for="fileInput">Choose files</label>
-            <div class="fm-dropzone" id="dropZone">
-              <p style="font-size: 28px; margin: 0 0 8px">📁</p>
-              <p style="margin: 0 0 8px; font-weight: 600">Select files from your device</p>
-              <p class="fm-muted">You can select multiple files or enable folder upload.</p>
-              <input id="fileInput" type="file" name="files" multiple style="margin-top: 10px; max-width: 100%" />
-            </div>
-          </div>
-
-          <label class="fm-toggle" for="folderUploadToggle">
-            <input type="checkbox" id="folderUploadToggle" />
-            <span>Upload an entire folder (where supported)</span>
-          </label>
-
-          <div class="fm-field">
-            <label for="uploadDescription">Description</label>
-            <textarea id="uploadDescription" name="description" placeholder="Describe these files (optional)"></textarea>
-          </div>
-
-          <div class="fm-field">
-            <label for="uploadReason">Reason</label>
-            <textarea id="uploadReason" name="reason" placeholder="Why are you uploading these files? (optional)"></textarea>
-          </div>
-
-          <div class="fm-selected" id="selectedFilesPanel" aria-live="polite">
-            <div class="fm-selected-header">
-              <div>
-                <strong id="selectedCount">0 files selected</strong>
-                <div class="fm-muted" id="selectedTotalSize">Total size: 0 B</div>
-              </div>
-              <button class="fm-button fm-secondary" type="button" id="clearSelectionButton">Clear selection</button>
-            </div>
-            <div class="fm-file-list" id="selectedFilesList"></div>
-          </div>
-
-          <div class="fm-progress-wrap" id="uploadProgressWrap">
-            <div class="fm-progress-info">
-              <span id="uploadProgressText">Uploading...</span>
-              <strong id="uploadProgressPercent">0%</strong>
-            </div>
-            <div class="fm-progress-track" id="uploadProgressTrack" role="progressbar" aria-label="Upload progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-              <div class="fm-progress-bar" id="uploadProgressBar"></div>
-            </div>
-          </div>
-
-          <div class="fm-message" id="uploadMessage" role="status" aria-live="polite"></div>
-
-          <div>
-            <button type="submit" class="fm-button fm-primary" id="uploadButton">Upload selected files</button>
-          </div>
-        </form>
-      </div>
-
-      <!-- Create folder -->
-      <aside>
-        <div style="padding: 18px; border: 1px solid var(--border-color, #e5e7eb); border-radius: 12px;">
-          <h2 style="margin-top: 0">Create Folder</h2>
-          <p class="fm-muted">Create a new folder inside the current directory.</p>
-
-          <form method="post" action="{% url 'filemanager:create_folder' %}" class="fm-form">
-            {% csrf_token %}
-            <input type="hidden" name="path" value="{{ current_path|default:'' }}" />
-
-            <div class="fm-field">
-              <label for="folderName">Folder name</label>
-              <input id="folderName" type="text" name="folder_name" placeholder="e.g. Documents" required maxlength="255" />
-            </div>
-
-            <div class="fm-field">
-              <label for="folderDescription">Description</label>
-              <textarea id="folderDescription" name="description" placeholder="Describe this folder (optional)"></textarea>
-            </div>
-
-            <div class="fm-field">
-              <label for="folderReason">Reason</label>
-              <textarea id="folderReason" name="reason" placeholder="Reason for creating this folder (optional)"></textarea>
-            </div>
-
-            <button type="submit" class="fm-button fm-primary">+ Create Folder</button>
-          </form>
-        </div>
-      </aside>
-    </div>
-  </section>
-
-  <!-- Directory listing -->
-  <section class="fm-card">
-    <div class="fm-heading">
-      <div>
+    <div class="fm-header-row">
+      <div class="fm-title">
         <h2>Directory Contents</h2>
-        <p class="fm-muted">Browse your folders and manage stored files.</p>
+        <p>Browse your folders and manage stored files.</p>
       </div>
+      
+      <button class="fm-btn fm-btn-primary" onclick="toggleUpload()">
+        + Create / Upload
+      </button>
     </div>
 
-    <nav class="fm-breadcrumbs" aria-label="Breadcrumb">
+    <nav class="fm-breadcrumbs">
       <a href="{% url 'filemanager:home' %}">Home</a>
       {% if breadcrumbs %}
         {% for crumb in breadcrumbs %}
@@ -203,15 +251,6 @@
       {% endif %}
     </nav>
 
-    <div class="fm-toolbar">
-      <form method="get" action="{% url 'filemanager:home' %}">
-        <input type="hidden" name="path" value="{{ current_path|default:'' }}" />
-        <input class="fm-search" type="search" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search files and folders..." aria-label="Search files and folders" />
-      </form>
-
-      <a class="fm-button fm-secondary" href="{% url 'filemanager:home' %}{% if current_path %}?path={{ current_path|urlencode }}{% endif %}">Refresh</a>
-    </div>
-
     <div class="fm-table-wrap">
       <table class="fm-table">
         <thead>
@@ -220,77 +259,79 @@
             <th>Type</th>
             <th>Size</th>
             <th>Modified</th>
-            <th>Actions</th>
+            <th style="width: 60px; text-align: right;">Actions</th>
           </tr>
         </thead>
-
         <tbody>
           {% for item in items %}
           <tr>
             <td>
               <div class="fm-name-cell">
                 {% if item.is_dir %}
-                  <span aria-hidden="true">📁</span>
-                  <a href="?path={{ item.path|urlencode }}">{{ item.name }}</a>
+                  <span class="fm-icon">📁</span>
+                  <a href="?path={{ item.path|urlencode }}" style="color: inherit; text-decoration: none;">{{ item.name }}</a>
                 {% else %}
-                  <span aria-hidden="true">📄</span>
-                  <a href="{% url 'filemanager:preview' item.path %}" target="_blank" rel="noopener">{{ item.name }}</a>
+                  <span class="fm-icon">📄</span>
+                  <a href="{% url 'filemanager:preview' item.path %}" target="_blank" rel="noopener" style="color: inherit; text-decoration: none;">{{ item.name }}</a>
                 {% endif %}
               </div>
             </td>
-
-            <td>
-              {% if item.is_dir %}
-                Folder
-              {% else %}
-                {{ item.extension|default:".FILE" }}
-              {% endif %}
+            <td style="color: var(--muted); font-size: 13px;">
+              {% if item.is_dir %}Folder{% else %}{{ item.extension|default:".FILE"|upper }}{% endif %}
             </td>
-
-            <td>
-              {% if item.is_dir %}
-                —
-              {% else %}
-                {{ item.size_display|default:item.size|default:"—" }}
-              {% endif %}
+            <td style="color: var(--muted); font-size: 13px;">
+              {% if item.is_dir %}—{% else %}{{ item.size_display|default:item.size|default:"—" }}{% endif %}
             </td>
+            <td style="color: var(--muted); font-size: 13px;">
+              {{ item.modified|default:item.modified_at|default:"—" }}
+            </td>
+            <td style="text-align: right;">
+              
+              <!-- Action Dropdown -->
+              <div style="position: relative;">
+                <button class="fm-more-btn" onclick="openMenu(event, this)">⋮</button>
+                
+                <div class="fm-dropdown-template" style="display: none;">
+                  <div class="fm-dropdown">
+                    
+                    {% if item.is_dir %}
+                      <a href="?path={{ item.path|urlencode }}">Open Folder</a>
+                    {% else %}
+                      <a href="{% url 'filemanager:preview' item.path %}" target="_blank" rel="noopener">Open File</a>
+                      <a href="{% url 'filemanager:download' item.path %}">Download</a>
+                      
+                      {% if item.extension == ".txt" or item.extension == ".py" or item.extension == ".html" or item.extension == ".css" or item.extension == ".js" or item.extension == ".json" or item.extension == ".md" or item.extension == ".csv" or item.extension == ".xml" or item.extension == ".ipynb" %}
+                        <a href="{% url 'filemanager:edit' item.path %}">Edit File</a>
+                      {% endif %}
+                    {% endif %}
 
-            <td>{{ item.modified|default:item.modified_at|default:"—" }}</td>
+                    <form class="fm-small-form" method="post" action="{% url 'filemanager:rename' %}" onsubmit="var n = prompt('Enter new name:', '{{ item.name|escapejs }}'); if (!n) { return false; } this.new_name.value = n;">
+                      {% csrf_token %}
+                      <input type="hidden" name="item_path" value="{{ item.path }}" />
+                      <input type="hidden" name="new_name" value="" />
+                      <button type="submit">Rename</button>
+                    </form>
 
-            <td>
-              <div class="fm-actions">
-                {% if item.is_dir %}
-                  <a class="fm-button fm-secondary" href="?path={{ item.path|urlencode }}">Open</a>
-                {% else %}
-                  <a class="fm-button fm-secondary" href="{% url 'filemanager:preview' item.path %}" target="_blank" rel="noopener">Open</a>
-                  <a class="fm-button fm-secondary" href="{% url 'filemanager:download' item.path %}">Download</a>
+                    <form class="fm-small-form" method="post" action="{% url 'filemanager:delete' %}" onsubmit="return confirm('Delete this item?');">
+                      {% csrf_token %}
+                      <input type="hidden" name="item_path" value="{{ item.path }}" />
+                      <button type="submit" class="danger">Delete</button>
+                    </form>
 
-                  {% if item.extension == ".txt" or item.extension == ".py" or item.extension == ".html" or item.extension == ".htm" or item.extension == ".css" or item.extension == ".js" or item.extension == ".json" or item.extension == ".md" or item.extension == ".csv" or item.extension == ".xml" or item.extension == ".yaml" or item.extension == ".yml" or item.extension == ".toml" or item.extension == ".ini" or item.extension == ".cfg" or item.extension == ".sql" or item.extension == ".sh" or item.extension == ".bat" or item.extension == ".log" or item.extension == ".ipynb" %}
-                    <a class="fm-button fm-secondary" href="{% url 'filemanager:edit' item.path %}">Edit</a>
-                  {% endif %}
-                {% endif %}
-
-                <form class="fm-small-form" method="post" action="{% url 'filemanager:rename' %}" onsubmit="var n = prompt('Enter new name:', '{{ item.name|escapejs }}'); if (!n) { return false; } this.new_name.value = n;">
-                  {% csrf_token %}
-                  <input type="hidden" name="item_path" value="{{ item.path }}" />
-                  <input type="hidden" name="new_name" value="" />
-                  <button type="submit" class="fm-button fm-secondary">Rename</button>
-                </form>
-
-                <form class="fm-small-form" method="post" action="{% url 'filemanager:delete' %}" onsubmit="return confirm('Delete this item?');">
-                  {% csrf_token %}
-                  <input type="hidden" name="item_path" value="{{ item.path }}" />
-                  <button type="submit" class="fm-button fm-danger">Delete</button>
-                </form>
+                  </div>
+                </div>
               </div>
+
             </td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="5" class="fm-empty">
-              <div style="font-size: 28px; margin-bottom: 8px">📂</div>
-              <strong>This folder is empty</strong>
-              <p class="fm-muted">Upload files or create a folder to get started.</p>
+            <td colspan="5">
+              <div class="fm-empty">
+                <div style="font-size: 32px; margin-bottom: 10px;">📂</div>
+                <strong>This folder is empty</strong>
+                <p style="font-size: 13px; margin-top: 5px;">Click "+ Create / Upload" to add files.</p>
+              </div>
             </td>
           </tr>
           {% endfor %}
@@ -299,36 +340,179 @@
     </div>
   </section>
 
-  <!-- Recent activity -->
-  <section class="fm-card">
-    <div class="fm-heading">
-      <div>
-        <h2>Recent Activity</h2>
-        <p class="fm-muted">Your latest file and folder operations.</p>
+  <!-- Upload Section (Hidden by default) -->
+  <section class="fm-card" id="uploadSection" style="display: none;">
+    <div class="fm-header-row">
+      <div class="fm-title">
+        <h2>Upload Files & Folders</h2>
+        <p>Upload to: <strong>/{{ current_path }}</strong></p>
       </div>
-      <a class="fm-button fm-secondary" href="{% url 'filemanager:activity' %}">View all activity</a>
     </div>
 
-    <div class="fm-activity-list">
+    <div class="fm-upload-area">
+      <!-- Upload Form -->
+      <form id="uploadForm" method="post" action="{% url 'filemanager:upload' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="path" value="{{ current_path|default:'' }}" />
+
+        <div class="fm-dropzone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+          <p style="font-size: 32px; margin: 0 0 10px;">📤</p>
+          <p style="font-weight: 600; margin: 0 0 5px;">Click to select files</p>
+          <p style="font-size: 12px; color: var(--muted); margin: 0;">or drag and drop files here</p>
+          <input id="fileInput" type="file" name="files" multiple style="display: none;" />
+        </div>
+
+        <div style="margin-top: 15px; display: flex; align-items: center; gap: 8px; font-size: 13px;">
+          <input type="checkbox" id="folderUploadToggle" style="width: auto;" />
+          <label for="folderUploadToggle" style="margin: 0; cursor: pointer;">Upload entire folder</label>
+        </div>
+
+        <div class="fm-form-group" style="margin-top: 15px;">
+          <label>Description (optional)</label>
+          <input type="text" name="description" placeholder="What are these files?" />
+        </div>
+        
+        <div class="fm-form-group">
+          <label>Reason (optional)</label>
+          <input type="text" name="reason" placeholder="Why are you uploading?" />
+        </div>
+
+        <div class="fm-selected" id="selectedFilesPanel" style="display: none; background: #f8faff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <strong id="selectedCount" style="font-size: 13px;">0 files selected</strong>
+            <span id="selectedTotalSize" style="font-size: 12px; color: var(--muted);">0 B</span>
+          </div>
+          <div id="selectedFilesList" style="max-height: 120px; overflow-y: auto; font-size: 12px; color: var(--muted);"></div>
+          <button type="button" class="fm-btn fm-btn-secondary" style="margin-top: 10px; padding: 5px 10px; font-size: 11px;" id="clearSelectionButton">Clear Selection</button>
+        </div>
+
+        <button type="submit" class="fm-btn fm-btn-primary" id="uploadButton" style="width: 100%;">Upload Files</button>
+      </form>
+
+      <!-- Create Folder Form -->
+      <form method="post" action="{% url 'filemanager:create_folder' %}" style="border-left: 1px solid var(--line); padding-left: 24px;">
+        {% csrf_token %}
+        <input type="hidden" name="path" value="{{ current_path|default:'' }}" />
+        
+        <h3 style="font-size: 15px; margin-top: 0; margin-bottom: 15px;">Or Create Folder</h3>
+
+        <div class="fm-form-group">
+          <label>Folder Name</label>
+          <input type="text" name="folder_name" placeholder="e.g. Documents" required maxlength="255" />
+        </div>
+
+        <div class="fm-form-group">
+          <label>Description (optional)</label>
+          <input type="text" name="description" placeholder="Folder description" />
+        </div>
+
+        <button type="submit" class="fm-btn fm-btn-secondary" style="width: 100%;">+ Create Folder</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Recent Activity -->
+  <section class="fm-card">
+    <div class="fm-header-row">
+      <div class="fm-title">
+        <h2>Recent Activity</h2>
+        <p>Your latest file and folder operations.</p>
+      </div>
+      <a class="fm-btn fm-btn-secondary" href="{% url 'filemanager:activity' %}">View All</a>
+    </div>
+
+    <div>
       {% for activity in recent_activity %}
-      <div class="fm-activity-item">
-        <strong>{{ activity.action|default:"Activity" }}</strong>
-        <div style="margin-top: 4px">{{ activity.description|default:"File manager activity" }}</div>
+      <div style="padding: 12px 0; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between;">
+        <div>
+          <strong style="font-size: 13px;">{{ activity.action|default:"Activity" }}</strong>
+          <div style="font-size: 13px; color: var(--muted); margin-top: 4px;">{{ activity.description|default:"File manager activity" }}</div>
+        </div>
         {% if activity.created_at %}
-        <div class="fm-muted" style="margin-top: 4px">{{ activity.created_at }}</div>
+        <div style="font-size: 12px; color: var(--muted);">{{ activity.created_at }}</div>
         {% endif %}
       </div>
       {% empty %}
-      <p class="fm-muted">No recent activity to display.</p>
+      <p style="color: var(--muted); font-size: 13px;">No recent activity to display.</p>
       {% endfor %}
     </div>
   </section>
 </div>
 
 <script>
-  (function () {
-    "use strict";
+  // ==========================================
+  // 1. CUSTOM FLOATING DROPDOWN MENU
+  // ==========================================
+  let activeMenu = null;
 
+  function openMenu(event, btn) {
+    event.stopPropagation();
+
+    if (activeMenu) {
+      activeMenu.remove();
+      activeMenu = null;
+      if (activeMenu === btn) return;
+    }
+
+    const container = btn.closest('td');
+    const template = container.querySelector('.fm-dropdown-template .fm-dropdown');
+    
+    if (!template) return;
+
+    const menu = template.cloneNode(true);
+    
+    document.body.appendChild(menu);
+    menu.classList.add('show');
+    
+    const rect = btn.getBoundingClientRect();
+    const menuWidth = 160; 
+    
+    let left = rect.right - menuWidth;
+    let top = rect.bottom + 4;
+    
+    const menuHeight = 160;
+    if (top + menuHeight > window.innerHeight) {
+      top = rect.top - menuHeight - 4; 
+    }
+
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+
+    activeMenu = menu;
+  }
+
+  document.addEventListener('click', function(e) {
+    if (activeMenu && !e.target.closest('.fm-dropdown')) {
+      activeMenu.remove();
+      activeMenu = null;
+    }
+  });
+
+  window.addEventListener('scroll', function() {
+    if (activeMenu) {
+      activeMenu.remove();
+      activeMenu = null;
+    }
+  }, { passive: true });
+
+
+  // ==========================================
+  // 2. TOGGLE UPLOAD SECTION
+  // ==========================================
+  function toggleUpload() {
+    const sec = document.getElementById("uploadSection");
+    if (sec.style.display === "none") {
+      sec.style.display = "block";
+      sec.scrollIntoView({ behavior: "smooth" });
+    } else {
+      sec.style.display = "none";
+    }
+  }
+
+  // ==========================================
+  // 3. UPLOAD LOGIC
+  // ==========================================
+  (function () {
     const form = document.getElementById("uploadForm");
     const fileInput = document.getElementById("fileInput");
     const folderToggle = document.getElementById("folderUploadToggle");
@@ -339,12 +523,6 @@
     const selectedTotalSize = document.getElementById("selectedTotalSize");
     const clearButton = document.getElementById("clearSelectionButton");
     const uploadButton = document.getElementById("uploadButton");
-    const progressWrap = document.getElementById("uploadProgressWrap");
-    const progressBar = document.getElementById("uploadProgressBar");
-    const progressText = document.getElementById("uploadProgressText");
-    const progressPercent = document.getElementById("uploadProgressPercent");
-    const progressTrack = document.getElementById("uploadProgressTrack");
-    const messageBox = document.getElementById("uploadMessage");
 
     if (!form || !fileInput) return;
 
@@ -361,82 +539,46 @@
       return size.toFixed(size < 10 ? 2 : 1) + " " + units[index];
     }
 
-    function showMessage(text, type) {
-      messageBox.textContent = text;
-      messageBox.className = "fm-message visible " + type;
-    }
-
-    function clearMessage() {
-      messageBox.textContent = "";
-      messageBox.className = "fm-message";
-    }
-
     function updateSelection(files) {
       const selectedFiles = Array.from(files || []);
       selectedList.replaceChildren();
       if (!selectedFiles.length) {
-        selectedPanel.classList.remove("visible");
+        selectedPanel.style.display = "none";
         return;
       }
-      selectedPanel.classList.add("visible");
+      selectedPanel.style.display = "block";
       const totalSize = selectedFiles.reduce((sum, file) => sum + file.size, 0);
       selectedCount.textContent = selectedFiles.length + (selectedFiles.length === 1 ? " file selected" : " files selected");
-      selectedTotalSize.textContent = "Total size: " + formatBytes(totalSize);
+      selectedTotalSize.textContent = "Total: " + formatBytes(totalSize);
+      
       selectedFiles.forEach((file, index) => {
         const row = document.createElement("div");
-        row.className = "fm-file-row";
-        const name = document.createElement("span");
-        name.className = "fm-file-name";
-        name.textContent = index + 1 + ". " + (file.webkitRelativePath || file.name);
-        const size = document.createElement("span");
-        size.className = "fm-file-size";
-        size.textContent = formatBytes(file.size);
-        row.append(name, size);
+        row.style.padding = "4px 0";
+        row.textContent = `${index + 1}. ${file.webkitRelativePath || file.name} (${formatBytes(file.size)})`;
         selectedList.appendChild(row);
       });
     }
 
-    function setProgress(percent, text) {
-      const value = Math.max(0, Math.min(100, percent));
-      progressWrap.classList.add("visible");
-      progressBar.style.width = value + "%";
-      progressPercent.textContent = Math.round(value) + "%";
-      progressText.textContent = text;
-      progressTrack.setAttribute("aria-valuenow", String(Math.round(value)));
-    }
-
-    function setUploading(isUploading) {
-      uploadButton.disabled = isUploading;
-      clearButton.disabled = isUploading;
-      fileInput.disabled = isUploading;
-      folderToggle.disabled = isUploading;
-      uploadButton.textContent = isUploading ? "Uploading..." : "Upload selected files";
-    }
-
     fileInput.addEventListener("change", function () {
       updateSelection(fileInput.files);
-      clearMessage();
     });
 
     folderToggle.addEventListener("change", function () {
       if (folderToggle.checked) {
         fileInput.setAttribute("webkitdirectory", "");
         fileInput.setAttribute("directory", "");
-        fileInput.setAttribute("multiple", "");
       } else {
         fileInput.removeAttribute("webkitdirectory");
         fileInput.removeAttribute("directory");
-        fileInput.setAttribute("multiple", "");
       }
       fileInput.value = "";
       updateSelection([]);
-      clearMessage();
     });
 
-    clearButton.addEventListener("click", function () {
+    clearButton.addEventListener("click", function (e) {
+      e.preventDefault();
       fileInput.value = "";
       updateSelection([]);
-      clearMessage();
     });
 
     ["dragenter", "dragover"].forEach(function (eventName) {
@@ -461,59 +603,50 @@
         Array.from(droppedFiles).forEach((file) => transfer.items.add(file));
         fileInput.files = transfer.files;
         updateSelection(fileInput.files);
-        clearMessage();
       } catch (error) {
-        showMessage("Please use the file picker to select files.", "error");
+        alert("Please use the file picker to select files.");
       }
     });
 
     form.addEventListener("submit", function (event) {
-      event.preventDefault();
-      clearMessage();
       if (!fileInput.files || !fileInput.files.length) {
-        showMessage("Please select at least one file or folder before uploading.", "error");
+        event.preventDefault();
+        alert("Please select at least one file or folder before uploading.");
         return;
       }
+
       const files = Array.from(fileInput.files);
       const formData = new FormData(form);
+      
       files.forEach(function (file) {
         formData.append("relative_paths", file.webkitRelativePath || file.name);
       });
-      setUploading(true);
-      setProgress(0, "Preparing upload...");
+
+      event.preventDefault();
+      
+      uploadButton.textContent = "Uploading...";
+      uploadButton.disabled = true;
+
       const xhr = new XMLHttpRequest();
       xhr.open("POST", form.action, true);
       xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-      xhr.upload.addEventListener("progress", function (event) {
-        if (event.lengthComputable) {
-          setProgress((event.loaded / event.total) * 100, "Uploading files...");
-        } else {
-          progressText.textContent = "Uploading files...";
-        }
-      });
+
       xhr.addEventListener("load", function () {
         if (xhr.status >= 200 && xhr.status < 300) {
-          setProgress(100, "Upload complete.");
-          showMessage("Upload request completed. Reloading the directory...", "success");
           window.location.reload();
         } else {
-          const text = xhr.status === 403
-            ? "Upload rejected (403). Check your login and CSRF settings."
-            : "Upload failed (HTTP " + xhr.status + "). Please try again.";
-          showMessage(text, "error");
-          progressText.textContent = "Upload failed.";
-          setUploading(false);
+          alert("Upload failed. Please try again.");
+          uploadButton.textContent = "Upload Files";
+          uploadButton.disabled = false;
         }
       });
+
       xhr.addEventListener("error", function () {
-        showMessage("A network error interrupted the upload. Check your connection and try again.", "error");
-        progressText.textContent = "Network error.";
-        setUploading(false);
+        alert("A network error interrupted the upload.");
+        uploadButton.textContent = "Upload Files";
+        uploadButton.disabled = false;
       });
-      xhr.addEventListener("abort", function () {
-        showMessage("The upload was cancelled.", "error");
-        setUploading(false);
-      });
+
       xhr.send(formData);
     });
   })();

@@ -1,0 +1,212 @@
+{% extends "filemanager/base.html" %}
+{% load static %}
+
+{% block title %}Viewing {{ file_name }} | StorageOS{% endblock %}
+{% block top_title %}Workspace / Document Viewer{% endblock %}
+
+{% block content %}
+<!-- Load PDF.js for PDF rendering -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<!-- Load docx-preview for Word rendering -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx-preview/0.2.1/docx-preview.min.js"></script>
+
+<style>
+  .viewer-container { display: flex; flex-direction: column; gap: 15px; height: calc(100vh - 120px); }
+  .viewer-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: #fff; padding: 12px; border-radius: 10px; border: 1px solid #e5e7eb; }
+  .viewer-toolbar .separator { width: 1px; height: 24px; background: #e5e7eb; margin: 0 5px; }
+  
+  .btn-tool { padding: 8px 12px; background: transparent; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; color: #374151; }
+  .btn-tool:hover { background: #f3f4f6; }
+  .btn-tool.active { background: #dc2626; color: white; border-color: #dc2626; }
+  
+  /* 5 Highlighter Colors */
+  .color-swatch { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; display: inline-block; }
+  .color-swatch:hover { transform: scale(1.1); }
+  .color-swatch.active { border-color: #111; box-shadow: 0 0 0 2px #fff inset; }
+  .c-yellow { background: rgba(253, 224, 71, 0.7); }
+  .c-green  { background: rgba(74, 222, 128, 0.7); }
+  .c-blue   { background: rgba(96, 165, 250, 0.7); }
+  .c-pink   { background: rgba(244, 114, 182, 0.7); }
+  .c-orange { background: rgba(251, 146, 60, 0.7); }
+
+  .viewer-canvas-wrap { flex: 1; overflow: auto; background: #525659; padding: 20px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+  .pdf-page-container { position: relative; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+  .pdf-canvas { display: block; }
+
+  /* Note popups */
+  .note-pin { position: absolute; width: 20px; height: 20px; background: #dc2626; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; z-index: 10; transform: translate(-50%, -50%); }
+</style>
+
+<div class="page-heading">
+  <div>
+    <h1>View: {{ file_name }}</h1>
+    <p class="muted">Highlight text, add notes, and undo changes.</p>
+  </div>
+  <a class="button" href="{% url 'filemanager:home' %}?path={{ request.GET.path|urlencode }}">← Back to Files</a>
+</div>
+
+<div class="viewer-container">
+  <div class="viewer-toolbar">
+    <button class="btn-tool" id="btnUndo" title="Undo" disabled>↶ Undo</button>
+    <button class="btn-tool" id="btnRedo" title="Redo" disabled>↷ Redo</button>
+    
+    <div class="separator"></div>
+    
+    <span class="muted small" style="margin-right: 5px;">Highlight:</span>
+    <div class="color-swatch c-yellow active" data-color="rgba(253, 224, 71, 0.7)"></div>
+    <div class="color-swatch c-green" data-color="rgba(74, 222, 128, 0.7)"></div>
+    <div class="color-swatch c-blue" data-color="rgba(96, 165, 250, 0.7)"></div>
+    <div class="color-swatch c-pink" data-color="rgba(244, 114, 182, 0.7)"></div>
+    <div class="color-swatch c-orange" data-color="rgba(251, 146, 60, 0.7)"></div>
+
+    <div class="separator"></div>
+    
+    <button class="btn-tool" id="btnAddNote">📝 Add Note</button>
+  </div>
+
+  <div class="viewer-canvas-wrap" id="viewerWrap">
+    <div id="loading" class="muted" style="color: white; margin-top: 50px;">Loading document...</div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const fileUrl = "{% url 'filemanager:preview' file_path %}";
+  const fileExt = "{{ file_name }}".split('.').pop().toLowerCase();
+  const viewerWrap = document.getElementById("viewerWrap");
+  const loading = document.getElementById("loading");
+  
+  let currentColor = "rgba(253, 224, 71, 0.7)";
+  let history = [];
+  let redoStack = [];
+
+  document.querySelectorAll('.color-swatch').forEach(swatch => {
+    swatch.addEventListener('click', function() {
+      document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+      this.classList.add('active');
+      currentColor = this.dataset.color;
+    });
+  });
+
+  function saveState() {
+    history.push(viewerWrap.innerHTML);
+    redoStack = [];
+    updateButtons();
+  }
+  function updateButtons() {
+    document.getElementById('btnUndo').disabled = history.length === 0;
+    document.getElementById('btnRedo').disabled = redoStack.length === 0;
+  }
+  document.getElementById('btnUndo').addEventListener('click', function() {
+    if (history.length > 0) {
+      redoStack.push(viewerWrap.innerHTML);
+      viewerWrap.innerHTML = history.pop();
+      updateButtons();
+    }
+  });
+  document.getElementById('btnRedo').addEventListener('click', function() {
+    if (redoStack.length > 0) {
+      history.push(viewerWrap.innerHTML);
+      viewerWrap.innerHTML = redoStack.pop();
+      updateButtons();
+    }
+  });
+
+  document.getElementById('btnAddNote').addEventListener('click', function() {
+    saveState();
+    const note = prompt("Enter your note:");
+    if (note) {
+      const pin = document.createElement('div');
+      pin.className = 'note-pin';
+      pin.style.top = '50%';
+      pin.style.left = '50%';
+      pin.textContent = '!';
+      pin.title = note;
+      pin.onclick = function() { alert(note); };
+      viewerWrap.appendChild(pin);
+    }
+  });
+
+  if (fileExt === 'pdf') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    pdfjsLib.getDocument(fileUrl).promise.then(function(pdf) {
+      loading.style.display = 'none';
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        pdf.getPage(pageNum).then(function(page) {
+          const viewport = page.getViewport({ scale: 1.5 });
+          const container = document.createElement('div');
+          container.className = 'pdf-page-container';
+          
+          const canvas = document.createElement('canvas');
+          canvas.className = 'pdf-canvas';
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          container.appendChild(canvas);
+          
+          const textLayer = document.createElement('div');
+          textLayer.className = 'textLayer';
+          textLayer.style.position = 'absolute';
+          textLayer.style.top = '0'; textLayer.style.left = '0'; textLayer.style.right = '0'; textLayer.style.bottom = '0';
+          textLayer.style.overflow = 'hidden'; textLayer.style.lineHeight = '1';
+          container.appendChild(textLayer);
+          
+          viewerWrap.appendChild(container);
+          
+          page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise.then(() => {
+            page.getTextContent().then(textContent => {
+              textContent.items.forEach(item => {
+                const span = document.createElement('span');
+                span.textContent = item.str;
+                const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+                span.style.position = 'absolute';
+                span.style.left = tx[4] + 'px';
+                span.style.top = (tx[5] - item.height) + 'px';
+                span.style.fontSize = item.height + 'px';
+                span.style.color = 'transparent';
+                span.style.cursor = 'text';
+                textLayer.appendChild(span);
+              });
+            });
+          });
+        });
+      }
+    }).catch(err => { loading.textContent = "Error loading PDF: " + err; });
+  } else if (fileExt === 'docx' || fileExt === 'doc') {
+    fetch(fileUrl).then(res => res.arrayBuffer()).then(buffer => {
+      loading.style.display = 'none';
+      const docContainer = document.createElement('div');
+      docContainer.style.background = 'white';
+      docContainer.style.padding = '40px';
+      docContainer.style.width = '100%';
+      docContainer.style.maxWidth = '800px';
+      viewerWrap.appendChild(docContainer);
+      docx.renderAsync(buffer, docContainer);
+    }).catch(err => { loading.textContent = "Error loading Word file: " + err; });
+  } else {
+    loading.textContent = "Preview not supported.";
+  }
+
+  viewerWrap.addEventListener('mouseup', applyHighlight);
+  viewerWrap.addEventListener('touchend', applyHighlight);
+
+  function applyHighlight(e) {
+    const selection = window.getSelection();
+    if (!selection.isCollapsed && selection.toString().trim().length > 0) {
+      saveState();
+      const range = selection.getRangeAt(0);
+      const span = document.createElement('span');
+      span.style.backgroundColor = currentColor;
+      span.className = 'user-highlight';
+      try {
+        range.surroundContents(span);
+      } catch (err) {
+        const fragment = range.extractContents();
+        span.appendChild(fragment);
+        range.insertNode(span);
+      }
+      selection.removeAllRanges();
+    }
+  }
+});
+</script>
+{% endblock %}

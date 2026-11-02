@@ -23,16 +23,28 @@
 
       <span class="tree-path">{{ node.path }}</span>
 
-      <form
-        class="tree-delete-form"
-        method="post"
-        action="{% url 'filemanager:delete_item' %}"
-        onsubmit="return confirmDeleteFolder('{{ node.name|escapejs }}');"
-      >
-        {% csrf_token %}
-        <input type="hidden" name="item_path" value="{{ node.path }}" />
-        <button class="tree-delete-button" type="submit" title="Delete this folder">Delete</button>
-      </form>
+      <!-- Action Menu -->
+      <div style="position: relative; margin-left: auto; padding-left: 10px;">
+        <button class="fm-more-btn" onclick="openMenu(event, this)" title="Actions">⋮</button>
+        <div class="fm-dropdown-template" style="display: none;">
+          <div class="fm-dropdown">
+            <!-- Header Details -->
+            <div class="fm-dropdown-header">
+              <strong style="display: block; color: #182338; font-size: 13px; margin-bottom: 2px;">{{ node.name }}</strong>
+              <span style="color: #77839a; font-size: 11px; word-break: break-all;">{{ node.path }}</span>
+            </div>
+            
+            <a href="{% url 'filemanager:home' %}?path={{ node.path|urlencode }}">📂 Open Folder</a>
+            
+            <form class="fm-small-form" method="post" action="{% url 'filemanager:delete_item' %}" onsubmit="return confirm('Delete this folder?');">
+              {% csrf_token %}
+              <input type="hidden" name="item_path" value="{{ node.path }}" />
+              <button type="submit" class="danger">🗑️ Delete Folder</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
     {% else %}
       <button class="tree-toggle" type="button" disabled aria-hidden="true">•</button>
 
@@ -43,6 +55,29 @@
       </a>
 
       <span class="tree-path">{{ node.path }}</span>
+
+      <!-- Action Menu -->
+      <div style="position: relative; margin-left: auto; padding-left: 10px;">
+        <button class="fm-more-btn" onclick="openMenu(event, this)" title="Actions">⋮</button>
+        <div class="fm-dropdown-template" style="display: none;">
+          <div class="fm-dropdown">
+            <!-- Header Details -->
+            <div class="fm-dropdown-header">
+              <strong style="display: block; color: #182338; font-size: 13px; margin-bottom: 2px;">{{ node.name }}</strong>
+              <span style="color: #77839a; font-size: 11px; word-break: break-all;">{{ node.path }}</span>
+            </div>
+
+            <a href="{% url 'filemanager:preview' node.path %}" target="_blank" rel="noopener">📄 Open File</a>
+            <a href="{% url 'filemanager:download' node.path %}">⬇️ Download</a>
+            
+            <form class="fm-small-form" method="post" action="{% url 'filemanager:delete_item' %}" onsubmit="return confirm('Delete this file?');">
+              {% csrf_token %}
+              <input type="hidden" name="item_path" value="{{ node.path }}" />
+              <button type="submit" class="danger">🗑️ Delete File</button>
+            </form>
+          </div>
+        </div>
+      </div>
     {% endif %}
   </div>
 

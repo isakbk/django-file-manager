@@ -33,10 +33,7 @@
       a { color: inherit; text-decoration: none; }
 
       /* ---------- Layout ---------- */
-      .layout {
-        min-height: 100vh;
-        display: flex;
-      }
+      .layout { min-height: 100vh; display: flex; }
 
       /* ---------- Sidebar: STICKY ---------- */
       .sidebar {
@@ -45,7 +42,6 @@
         padding: 27px 17px;
         background: var(--sidebar);
         color: #c3cce0;
-
         position: sticky;
         top: 0;
         height: 100vh;
@@ -69,8 +65,32 @@
         text-transform: uppercase;
       }
 
-      .nav-link { display: block; padding: 12px; margin: 4px 0; border-radius: 9px; }
-      .nav-link:hover, .nav-link.active { background: #253452; color: white; }
+      .nav-link {
+        display: block;
+        padding: 12px;
+        margin: 4px 0;
+        border-radius: 9px;
+      }
+      .nav-link:hover, .nav-link.active {
+        background: #253452;
+        color: white;
+      }
+
+      /* FIXED: Logout button styling */
+      .logout-btn {
+        width: 100%;
+        text-align: left;
+        border: none;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: inherit;
+      }
+      .logout-btn:hover {
+        background: #253452;
+        color: white;
+      }
 
       .sidebar-note {
         margin: 35px 6px 0;
@@ -99,7 +119,6 @@
         align-items: center;
         justify-content: space-between;
         gap: 15px;
-
         position: sticky;
         top: 0;
         z-index: 20;
@@ -312,7 +331,7 @@
         .sidebar {
           width: 100%;
           height: auto;
-          position: static;  /* Stop sticking on mobile */
+          position: static;
           overflow-y: visible;
           padding: 15px;
         }
@@ -320,10 +339,11 @@
         .brand { padding: 0 5px 12px; }
         .nav-label, .sidebar-note { display: none; }
         .nav-link { display: inline-block; padding: 8px 10px; }
+        .logout-btn { display: inline-block; width: auto; padding: 8px 10px; }
 
         .topbar {
           height: 58px;
-          position: sticky;  /* Keep header sticky on mobile */
+          position: sticky;
           top: 0;
         }
 
@@ -350,12 +370,21 @@
         <div class="nav-label">System</div>
         <a class="nav-link" href="{% url 'admin:index' %}">⚙ &nbsp; Django Admin</a>
 
+        <div class="nav-label">Account</div>
+        {% if user.is_authenticated %}
+          <a class="nav-link" href="{% url 'filemanager:change_password' %}">🔒 &nbsp; Change Password</a>
+          <form method="post" action="{% url 'filemanager:logout' %}" style="display: block; margin: 0;">
+            {% csrf_token %}
+            <button type="submit" class="nav-link logout-btn">🚪 &nbsp; Logout ({{ user.username }})</button>
+          </form>
+        {% else %}
+          <a class="nav-link" href="{% url 'filemanager:login' %}">🔑 &nbsp; Login</a>
+          <a class="nav-link" href="{% url 'filemanager:register' %}">📝 &nbsp; Register</a>
+        {% endif %}
+
         <div class="sidebar-note">
           <strong>LOCAL STORAGE</strong>
-          <p>
-            Files are stored on your computer inside the managed storage
-            directory.
-          </p>
+          <p>Files are stored on your computer inside the managed storage directory.</p>
           <span>● Private local workspace</span>
         </div>
       </aside>
@@ -382,8 +411,6 @@
     <script>
       (function () {
         const key = "storageos_scroll_position";
-
-        // Restore scroll after page reload.
         const saved = sessionStorage.getItem(key);
 
         if (saved !== null) {
@@ -393,7 +420,6 @@
           });
         }
 
-        // Save position before Delete or Upload form submission.
         document.addEventListener(
           "submit",
           function (event) {
@@ -402,12 +428,11 @@
               sessionStorage.setItem(key, window.scrollY);
             }
           },
-          true
+          true,
         );
       })();
     </script>
-    
-    <!-- FIXED: Added missing script tag for static files -->
+
     <script src="{% static 'js/adaptive-network.js' %}" defer></script>
   </body>
 </html>
